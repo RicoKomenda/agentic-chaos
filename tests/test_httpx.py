@@ -23,7 +23,14 @@ def test_rate_limit_becomes_http_429():
     assert session.trace.of("llm.call", "api.example.com")
 
 
-def test_response_corruption():
+def test_text_mode_acts_on_model_text():
     with bound(Session([faults.Truncate(keep=0.5)])):
-        body = client().get("https://api.example.com/v1/messages").text
+        assert client().get("https://api.example.com/v1/messages").json() == {"content": "he"}
+
+
+def test_raw_mode_acts_on_the_wire_body():
+    upstream = httpx.MockTransport(lambda request: httpx.Response(200, json={"content": "hello"}))
+    raw = httpx.Client(transport=ChaosTransport(upstream, mode="raw"))
+    with bound(Session([faults.Truncate(keep=0.5)])):
+        body = raw.get("https://api.example.com/v1/messages").text
     assert body == '{"content":"hello"}'[: len('{"content":"hello"}') // 2]

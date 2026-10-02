@@ -96,6 +96,9 @@ class McpHttpProxy:
             return
 
         decision = await asyncio.to_thread(self.core.client_request, message)
+        if decision.forward is not None:
+            message = decision.forward
+            body = json.dumps(message).encode()
         if decision.auth is not None:
             exc = decision.auth
             await _send(

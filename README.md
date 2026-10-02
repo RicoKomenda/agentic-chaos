@@ -182,8 +182,10 @@ a canary in a tool argument or the final output, never as real harm.
 
 Plus `probes.custom(...)` for anything else.
 
-**Integrations**: `httpx` transports for model providers (`integrations.httpx`) and A2A including streaming
-(`integrations.a2a`), and the MCP chaos proxy for stdio and Streamable HTTP (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`).
+**Integrations**: transports for model providers and A2A, for `httpx` (`integrations.httpx`, `integrations.a2a`)
+and `httpx2` (`integrations.httpx2`, used by current OpenAI and Anthropic SDKs), including streaming; and the MCP chaos
+proxy for stdio and Streamable HTTP, both protocol eras (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`). Tested against
+the official MCP, A2A, OpenAI and Anthropic SDKs - see [docs/interop.md](docs/interop.md).
 
 **Experiment catalog** ([`experiments/`](experiments)): ready-made experiments for single agents, MCP, multi-agent
 systems and AP2, mapped to the OWASP Top 10 for Agentic Applications (ASI01-ASI10), the OWASP Top 10 for LLM
@@ -199,6 +201,7 @@ runs are seeded so results can be reproduced.
 - [Fault catalog and risk mapping](docs/fault-catalog.md)
 - [Writing experiments](docs/writing-experiments.md)
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
+- [Interoperability with official SDKs, and findings](docs/interop.md)
 - [Running chaos safely](docs/safety.md)
 - [Landscape and related work](docs/landscape.md)
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)

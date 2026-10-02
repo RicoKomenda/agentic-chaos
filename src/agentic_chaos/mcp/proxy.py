@@ -131,6 +131,7 @@ class McpChaosProxy:
             if "method" in message and "id" in message:
                 # faults may sleep (latency); keep the event loop responsive
                 decision = await asyncio.to_thread(self.core.client_request, message)
+                message = decision.forward or message
                 for request in decision.server_requests:
                     await self.downstream.write(request)
                 if decision.reply is not None:
