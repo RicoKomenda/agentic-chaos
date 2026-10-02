@@ -44,5 +44,8 @@ pythonpath = ["."]
 line-length = 120
 target-version = "py310"
 
+[tool.ruff.format]
+exclude = ["*.md"]
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
