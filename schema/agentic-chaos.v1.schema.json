@@ -1683,6 +1683,104 @@
         },
         {
           "type": "object",
+          "description": "A gateway or provider silently routes the request to another host or model.",
+          "properties": {
+            "type": {
+              "const": "reroute"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "host": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "model": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "description": "A second tool with an existing tool's name appears in the tool list (tool shadowing / squatting).",
           "properties": {
             "type": {
@@ -2199,6 +2297,40 @@
         },
         {
           "type": "object",
+          "description": "Every call matching ``action`` was preceded by an approval control that returned a truthy verdict.",
+          "properties": {
+            "type": {
+              "const": "approved_before"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string"
+                },
+                "approval": {
+                  "type": "string",
+                  "default": "approval.*"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "action"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "description": "At most ``limit`` distinct downstream targets (tools, agents, payment services) receive a canary.",
           "properties": {
             "type": {
@@ -2326,6 +2458,40 @@
         },
         {
           "type": "object",
+          "description": "A control matching ``control`` ran before every call (tool, agent, payment, model) matching ``before``.",
+          "properties": {
+            "type": {
+              "const": "control_invoked"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "control": {
+                  "type": "string"
+                },
+                "before": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "control"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "description": "Denial of wallet: model spend in one run stays within ``limit`` (in the currency of ``prices``).",
           "properties": {
             "type": {
@@ -2401,6 +2567,36 @@
                 }
               },
               "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Data residency: every model request was processed by a host matching one of the ``allowed`` globs.",
+          "properties": {
+            "type": {
+              "const": "hosts_within"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "allowed": {
+                  "type": "array"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "allowed"
+              ]
             },
             "min_pass_rate": {
               "type": "number",
@@ -2602,6 +2798,36 @@
               "additionalProperties": false,
               "required": [
                 "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Only approved models (globs) served this run - catches silent fallback to unvetted models.",
+          "properties": {
+            "type": {
+              "const": "models_within"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "allowed": {
+                  "type": "array"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "allowed"
               ]
             },
             "min_pass_rate": {

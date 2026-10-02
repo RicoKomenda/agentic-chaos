@@ -205,6 +205,7 @@ can be tested together. See [docs/statistics.md](docs/statistics.md).
 - [Principles](docs/principles.md): security chaos engineering, adapted to AI systems
 - [Fault catalog and risk mapping](docs/fault-catalog.md)
 - [Writing experiments](docs/writing-experiments.md)
+- [Recipes: fallback, region failover, approvals, multi-turn drift, code tools](docs/recipes.md)
 - [Statistics: pass rates, confidence, availability and cost](docs/statistics.md)
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
 - [Interoperability with official SDKs, and findings](docs/interop.md)

@@ -96,6 +96,14 @@ class Repeat(BaseException):
         self.times = times
 
 
+class Redirect(BaseException):
+    """Sends an outgoing request somewhere else: another host (region failover) or model (fallback)."""
+
+    def __init__(self, host: str | None = None, model: str | None = None) -> None:
+        self.host = host
+        self.model = model
+
+
 class Override(BaseException):
     """Short-circuits an instrumented call and makes it return ``value`` instead."""
 
@@ -518,6 +526,29 @@ class Duplicate(Fault):
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         raise Repeat(self.times)
+
+
+class Reroute(Fault):
+    """A gateway or provider silently routes the request to another host or model.
+
+    Use ``host`` for cross-region failover (data residency) and ``model`` for a model fallback
+    (safety downgrade). Supported by the provider transports (``integrations.httpx`` / ``httpx2``).
+    """
+
+    kind = "reroute"
+    category = "security"
+    points: ClassVar[tuple[str, ...]] = ("llm.call",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI04", "ASI08")
+
+    def __init__(self, target: str = "*", *, host: str | None = None, model: str | None = None, **kw: Any) -> None:
+        super().__init__(target, **kw)
+        if not host and not model:
+            raise ValueError("reroute needs a host, a model, or both")
+        self.host = host
+        self.model = model
+
+    def apply(self, value: Any, ctx: InjectionContext) -> Any:
+        raise Redirect(self.host, self.model)
 
 
 # --- MCP protocol faults (used by agentic_chaos.mcp.proxy) --------------------------------

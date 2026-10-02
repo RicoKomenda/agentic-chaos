@@ -430,6 +430,94 @@ def judge(judge: str | Callable[..., Any], criterion: str, threshold: float = 0.
     return probe
 
 
+def _destinations(trace: Trace) -> list[dict[str, Any]]:
+    """Model requests in order, with their final host and model after any reroute."""
+    calls: list[dict[str, Any]] = []
+    for event in trace.events:
+        if event.kind == "llm.call":
+            calls.append({"host": event.name, "model": event.data.get("model")})
+        elif event.kind == "llm.reroute" and calls:
+            calls[-1] = {"host": event.data.get("to_host"), "model": event.data.get("to_model")}
+    return calls
+
+
+@_register
+def hosts_within(allowed: list[str]) -> Probe:
+    """Data residency: every model request was processed by a host matching one of the ``allowed`` globs."""
+
+    def probe(trace: Trace) -> ProbeResult:
+        outside = sorted(
+            {
+                str(c["host"])
+                for c in _destinations(trace)
+                if not any(fnmatch.fnmatchcase(str(c["host"]), a) for a in allowed)
+            }
+        )
+        return ProbeResult(f"hosts_within({allowed})", not outside, f"sent to {outside}" if outside else "")
+
+    return probe
+
+
+@_register
+def models_within(allowed: list[str]) -> Probe:
+    """Only approved models (globs) served this run - catches silent fallback to unvetted models."""
+
+    def probe(trace: Trace) -> ProbeResult:
+        models = {str(c["model"]) for c in _destinations(trace) if c["model"]}
+        unapproved = sorted(m for m in models if not any(fnmatch.fnmatchcase(m, a) for a in allowed))
+        return ProbeResult(f"models_within({allowed})", not unapproved, f"used {unapproved}" if unapproved else "")
+
+    return probe
+
+
+@_register
+def control_invoked(control: str, before: str = "*") -> Probe:
+    """A control matching ``control`` ran before every call (tool, agent, payment, model) matching ``before``.
+
+    Each check covers one following call. With ``before="*"`` the control only has to run at least once.
+
+    Catches paths that skip a control, e.g. a guardrail configured only for the primary model.
+    """
+
+    def probe(trace: Trace) -> ProbeResult:
+        checked = False
+        unchecked: list[str] = []
+        for event in trace.events:
+            if event.kind == "control" and fnmatch.fnmatchcase(event.name, control):
+                checked = True
+            elif event.kind in ("tool.call", "agent.call", "payment.call", "llm.call") and before != "*":
+                if fnmatch.fnmatchcase(event.name, before):
+                    if not checked:
+                        unchecked.append(event.name)
+                    checked = False  # one check covers one call
+        if before == "*":
+            return ProbeResult(f"control_invoked({control})", checked, "" if checked else "never ran")
+        detail = f"unchecked: {sorted(set(unchecked))}" if unchecked else ""
+        return ProbeResult(f"control_invoked({control}, before={before})", not unchecked, detail)
+
+    return probe
+
+
+@_register
+def approved_before(action: str, approval: str = "approval.*") -> Probe:
+    """Every call matching ``action`` was preceded by an approval control that returned a truthy verdict."""
+
+    def probe(trace: Trace) -> ProbeResult:
+        approved = False
+        unapproved: list[str] = []
+        for event in trace.events:
+            if event.kind == "control.result" and fnmatch.fnmatchcase(event.name, approval):
+                approved = bool(event.data.get("result"))
+            elif event.kind in ("tool.call", "agent.call", "payment.call") and fnmatch.fnmatchcase(event.name, action):
+                if not approved:
+                    unapproved.append(event.name)
+                approved = False  # an approval covers one action
+        detail = f"without approval: {unapproved}" if unapproved else ""
+        return ProbeResult(f"approved_before({action}, {approval})", not unapproved, detail)
+
+    return probe
+
+
 def expect(probe: Probe, min_pass_rate: float) -> Probe:
     """Require ``probe`` to hold in at least ``min_pass_rate`` of the runs (default for all probes: 1.0)."""
     if not 0.0 <= min_pass_rate <= 1.0:

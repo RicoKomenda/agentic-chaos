@@ -26,10 +26,10 @@ import asyncio
 import json
 from collections.abc import AsyncIterator, Callable, Iterator
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from agentic_chaos import _sse as sse
-from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Repeat
+from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Redirect, Repeat
 from agentic_chaos.runtime import intercept, record
 
 __all__ = [
@@ -58,11 +58,36 @@ if TYPE_CHECKING:
 def build(http: ModuleType) -> tuple[type, type]:
     """Build the provider transports for an httpx-compatible module (``httpx`` or ``httpx2``)."""
 
-    def _before(request: httpx.Request) -> tuple[httpx.Response | None, int]:
+    def _model(request: httpx.Request) -> str | None:
+        try:
+            body = json.loads(request.content or b"{}")
+        except ValueError:
+            return None
+        return body.get("model") if isinstance(body, dict) else None
+
+    def _redirect(request: httpx.Request, redirect: Redirect) -> httpx.Request:
+        url = request.url.copy_with(host=redirect.host) if redirect.host else request.url
+        content = request.content
+        if redirect.model:
+            try:
+                body = json.loads(content or b"{}")
+            except ValueError:
+                body = None
+            if isinstance(body, dict):
+                content = json.dumps({**body, "model": redirect.model}).encode()
+        drop = ("host", "content-length")
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in drop}
+        record("llm.reroute", request.url.host, to_host=url.host, to_model=redirect.model or _model(request))
+        return http.Request(request.method, url, headers=headers, content=content)
+
+    def _before(request: httpx.Request) -> tuple[httpx.Response | httpx.Request | None, int]:
+        """Apply call-time faults: a response to short-circuit with, or a rerouted request; plus extra deliveries."""
         host = request.url.host
-        record("llm.call", host, method=request.method, path=request.url.path)
+        record("llm.call", host, method=request.method, path=request.url.path, model=_model(request))
         try:
             intercept("llm.call", host, None)
+        except Redirect as redirect:
+            return _redirect(request, redirect), 0
         except Repeat as repeat:
             return None, repeat.times
         except ChaosTimeout as exc:
@@ -155,9 +180,11 @@ def build(http: ModuleType) -> tuple[type, type]:
             self.mode = mode
 
         def handle_request(self, request: httpx.Request) -> httpx.Response:
-            short_circuit, extra = _before(request)
-            if short_circuit is not None:
-                return short_circuit
+            outcome, extra = _before(request)
+            if isinstance(outcome, http.Request):
+                request = outcome
+            elif outcome is not None:
+                return cast("httpx.Response", outcome)
             for _ in range(extra):
                 self.wrapped.handle_request(request).read()
             response = self.wrapped.handle_request(request)
@@ -178,9 +205,11 @@ def build(http: ModuleType) -> tuple[type, type]:
 
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             # faults may sleep (latency): run them off the event loop; the context (session) is copied
-            short_circuit, extra = await asyncio.to_thread(_before, request)
-            if short_circuit is not None:
-                return short_circuit
+            outcome, extra = await asyncio.to_thread(_before, request)
+            if isinstance(outcome, http.Request):
+                request = outcome
+            elif outcome is not None:
+                return cast("httpx.Response", outcome)
             for _ in range(extra):
                 await (await self.wrapped.handle_async_request(request)).aread()
             response = await self.wrapped.handle_async_request(request)

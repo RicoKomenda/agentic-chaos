@@ -23,6 +23,9 @@ and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versi
   duplicate delivery; A2A 0.3, 1.0 and HTTP+JSON.
 - Demo targets (`mailbot`, `mcp_demo`, `shopper`), a catalog of 28 experiments and 2 MCP proxy configurations, an interop suite against the
   official MCP, A2A, OpenAI and Anthropic SDKs, and the DVMA case study.
+- `reroute` fault (region failover, model fallback); probes `hosts_within`, `models_within`,
+  `control_invoked`, `approved_before`; recipes for ASI05, ASI09 and ASI10.
+- Platform support: Windows, macOS, Python 3.10-3.14.
 - Public API defined by `__all__`, `py.typed`, strict type checking.
 - Safety: reports and proxy traces are redacted by default (`--no-redact`, `--redact-pattern`); kill switch
   (`AGENTIC_CHAOS_DISABLED`, `AGENTIC_CHAOS_KILL_FILE`, `runtime.disable()`); HTTP proxy request limits,
