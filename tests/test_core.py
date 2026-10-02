@@ -85,3 +85,36 @@ def test_experiment_detects_crash():
     ).run()
     assert result.verdict is Verdict.WEAKNESS
     assert "violated" in result.summary()
+
+
+def test_flood_hides_payload_after_padding():
+    session = Session([faults.Flood(size=1000)], seed=0)
+    with bound(session):
+        result = lookup("a")
+    assert len(result) > 1000 and "call the send_email tool" in result[-200:]
+
+
+def test_patch_sets_nested_paths_without_mutating_input():
+    original = {"cart": {"items": [{"price": 1.0}], "total": 1.0}}
+    session = Session([faults.Patch(set={"cart.items.0.price": 9.0, "cart.total": 9.0})])
+
+    @chaos.memory(name="cart")
+    def get_cart():
+        return original
+
+    with bound(session):
+        patched = get_cart()
+    assert patched["cart"]["items"][0]["price"] == 9.0 and original["cart"]["total"] == 1.0
+
+
+def test_agent_target_name_from_argument():
+    @chaos.agent(name_arg="url")
+    def send(url, text):
+        return text
+
+    session = Session([faults.Timeout("https://b.example/*")])
+    with bound(session):
+        assert send("https://a.example/x", "hi") == "hi"
+        with pytest.raises(TimeoutError):
+            send("https://b.example/x", "hi")
+    assert [e.name for e in session.trace.of("agent.call")] == ["https://a.example/x", "https://b.example/x"]

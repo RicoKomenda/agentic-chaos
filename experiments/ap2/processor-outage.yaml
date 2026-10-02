@@ -1,0 +1,20 @@
+apiVersion: agentic-chaos/v1alpha1
+kind: Experiment
+metadata:
+  name: ap2-processor-outage
+  description: The payment processor is down.
+  tags: [ASI08, AP2]
+spec:
+  hypothesis: A processor outage ends with a clear failure, bounded retries and never more than one charge.
+  target:
+    entrypoint: examples.shopper.agent:naive
+  faults:
+    - type: timeout
+      target: "processor.*"
+      point: payment.call
+  probes:
+    - type: no_unhandled_error
+    - type: max_events
+      params: {kind: payment.call, limit: 3}
+    - type: max_settlements
+      params: {limit: 1}
