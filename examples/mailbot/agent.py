@@ -6,7 +6,9 @@ its context. Three variants show how the same experiments separate weak from str
 * ``naive``             - no guardrail, no error handling
 * ``guarded_fail_open`` - has an injection guardrail that only inspects the first 2,000 characters,
                           and proceeds if the guardrail is down
-* ``hardened``          - guardrail fails closed, an authorization check guards the sensitive tool,
+* ``fail_closed``       - like ``hardened``, but refuses every request while the guardrail is down
+* ``hardened``          - guardrail failures degrade to a read-only safe mode (no side effects), an
+                          authorization check guards the sensitive tool,
                           and tool/LLM errors are handled gracefully
 
 Swap the scripted model for a real one (see ``agentic_chaos.integrations.httpx``) to run the same
@@ -89,7 +91,11 @@ def think(context: str) -> dict:
 # --- agent loop ---------------------------------------------------------------------------
 
 
-def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: int, inspect_limit: int | None = None):
+def make_agent(*, guardrail: bool, on_failure: str, allow_list: bool, retries: int, inspect_limit: int | None = None):
+    """``on_failure`` decides what happens when the guardrail is unavailable:
+    ``open`` (skip it), ``closed`` (refuse) or ``safe`` (answer in read-only mode, no side effects)."""
+    assert on_failure in ("open", "closed", "safe")
+
     def run(task: str = "Summarise https://example.com/news", user: str = "alice") -> str:
         send_email = make_send_email(Mailbox())
         url = task.split()[-1]
@@ -104,16 +110,21 @@ def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: i
             log.warning("fetch_page failed for %s", url)
             return "Sorry, I could not fetch that page right now."
         context = f"NOTES:\n{chr(10).join(notes)}\nTOOLS:\n{tools}\nPAGE:\n{page}"
+        read_only = False
 
         if guardrail:
             try:
                 # a guardrail with a limited inspection window only sees the start of the context
                 safe = injection_guardrail(context[:inspect_limit] if inspect_limit else context)
             except Exception:
-                if not fail_open:
+                if on_failure == "closed":
                     log.error("injection guardrail unavailable - refusing (fail closed)")
                     return "Sorry, I can't safely complete this request right now."
-                log.warning("injection guardrail unavailable - continuing without it")
+                if on_failure == "safe":
+                    log.warning("injection guardrail unavailable - continuing in read-only safe mode")
+                    read_only = True
+                else:
+                    log.warning("injection guardrail unavailable - continuing without it")
                 safe = True
             if not safe:
                 log.warning("possible prompt injection blocked")
@@ -129,6 +140,11 @@ def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: i
                         raise
                     log.error("model unavailable after %d attempts", attempt + 1)
                     return "The assistant is temporarily unavailable."
+        if read_only:
+            if decision.get("action"):
+                log.warning("safe mode: suppressed %s action", decision["action"])
+            # no side effects in safe mode: answer from the fetched content only
+            return "Summary: " + page.strip().split(".")[0] + "."
         if decision.get("action") == "send_email":
             if allow_list:
                 try:
@@ -145,6 +161,7 @@ def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: i
     return run
 
 
-naive = make_agent(guardrail=False, fail_open=True, allow_list=False, retries=0)
-guarded_fail_open = make_agent(guardrail=True, fail_open=True, allow_list=False, retries=2, inspect_limit=2000)
-hardened = make_agent(guardrail=True, fail_open=False, allow_list=True, retries=2)
+naive = make_agent(guardrail=False, on_failure="open", allow_list=False, retries=0)
+guarded_fail_open = make_agent(guardrail=True, on_failure="open", allow_list=False, retries=2, inspect_limit=2000)
+fail_closed = make_agent(guardrail=True, on_failure="closed", allow_list=True, retries=2)
+hardened = make_agent(guardrail=True, on_failure="safe", allow_list=True, retries=2)

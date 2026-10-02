@@ -7,7 +7,7 @@ import pytest
 from agentic_chaos import Verdict, loader
 
 CATALOG = Path(__file__).parent.parent / "experiments"
-W, H = Verdict.WEAKNESS, Verdict.HELD
+W, H, U = Verdict.WEAKNESS, Verdict.HELD, Verdict.INCONCLUSIVE  # U = undecided
 
 # catalog directory -> (demo module, {experiment file stem: expected verdict for the naive variant})
 SUITES = {
@@ -24,6 +24,7 @@ SUITES = {
             "llm-provider-rate-limit": W,
             "asi08-slow-dependencies": H,
             "asi01-context-flood": W,
+            "control-guardrail-dos": U,  # no guardrail to attack
         },
     ),
     "mcp": (
@@ -81,6 +82,16 @@ def test_guardrail_that_fails_open_is_caught():
     assert run(".", "asi01-indirect-prompt-injection", "guarded_fail_open") is Verdict.HELD
     assert run(".", "control-guardrail-outage", "guarded_fail_open") is Verdict.WEAKNESS
     assert run(".", "asi01-context-flood", "guarded_fail_open") is Verdict.WEAKNESS  # limited inspection window
+
+
+def test_guardrail_failure_dilemma():
+    """Fail-open loses security, fail-closed loses availability, safe mode keeps both."""
+    assert run(".", "control-guardrail-dos", "guarded_fail_open") is Verdict.HELD
+    assert run(".", "control-guardrail-outage", "guarded_fail_open") is Verdict.WEAKNESS
+    assert run(".", "control-guardrail-dos", "fail_closed") is Verdict.WEAKNESS
+    assert run(".", "control-guardrail-outage", "fail_closed") is Verdict.HELD
+    assert run(".", "control-guardrail-dos", "hardened") is Verdict.HELD
+    assert run(".", "control-guardrail-outage", "hardened") is Verdict.HELD
 
 
 def test_directory_expansion_skips_proxy_configs():

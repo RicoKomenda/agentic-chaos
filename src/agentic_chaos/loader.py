@@ -81,6 +81,9 @@ def from_dict(doc: dict[str, Any], *, entrypoint: str | None = None, runs: int |
         seed=spec.get("seed", 0),
         baseline=spec.get("baseline", True),
         tags=list(meta.get("tags", [])),
+        pass_rate=float(spec.get("pass_rate", 1.0)),
+        confidence=float(spec.get("confidence", 0.95)),
+        require_confidence=bool(spec.get("require_confidence", False)),
     )
 
 
@@ -90,7 +93,10 @@ def _fault(item: dict[str, Any]) -> fault_lib.Fault:
 
 
 def _probe(item: dict[str, Any]) -> probe_lib.Probe:
-    return probe_lib.build(item["type"], **item.get("params", {}))
+    probe = probe_lib.build(item["type"], **item.get("params", {}))
+    if "min_pass_rate" in item:
+        probe = probe_lib.expect(probe, float(item["min_pass_rate"]))
+    return probe
 
 
 def load_proxy_config(path: str | Path) -> tuple[list[fault_lib.Fault], list[probe_lib.Probe], int | None]:

@@ -1,4 +1,10 @@
-"""Experiments: hypothesis + steady state + faults, run as baseline vs. chaos."""
+"""Experiments: hypothesis + steady state + faults, run as baseline vs. chaos.
+
+Agents are non-deterministic, so every probe is judged by its *pass rate* across runs against a
+threshold (``min_pass_rate``, default 1.0 = must always hold). Each rate is reported with a Wilson
+confidence interval. With ``require_confidence``, a rate whose interval still straddles the
+threshold makes the experiment inconclusive instead of deciding on a point estimate.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +19,7 @@ from typing import Any
 from agentic_chaos.faults import Fault
 from agentic_chaos.probes import Probe, ProbeResult
 from agentic_chaos.runtime import Session, Trace, bound
+from agentic_chaos.stats import runs_needed, wilson_interval
 
 
 class Verdict(str, Enum):
@@ -50,12 +57,69 @@ class RunResult:
 
 
 @dataclass
+class ProbeStats:
+    """How often one probe held in one phase."""
+
+    name: str
+    phase: str
+    passes: int
+    runs: int
+    threshold: float
+    confidence: float
+    detail: str = ""
+
+    @property
+    def rate(self) -> float:
+        return self.passes / self.runs if self.runs else 0.0
+
+    @property
+    def interval(self) -> tuple[float, float]:
+        return wilson_interval(self.passes, self.runs, self.confidence)
+
+    @property
+    def meets_threshold(self) -> bool:
+        return self.rate >= self.threshold
+
+    @property
+    def confident(self) -> bool:
+        """True if the confidence interval lies entirely on one side of the threshold."""
+        if self.threshold >= 1.0:
+            return True  # any failure decides; all passes is the strongest possible evidence
+        low, high = self.interval
+        return low >= self.threshold or high < self.threshold
+
+    def to_dict(self) -> dict[str, Any]:
+        low, high = self.interval
+        return {
+            "name": self.name,
+            "phase": self.phase,
+            "passes": self.passes,
+            "runs": self.runs,
+            "rate": self.rate,
+            "ci_low": round(low, 4),
+            "ci_high": round(high, 4),
+            "threshold": self.threshold,
+            "meets_threshold": self.meets_threshold,
+        }
+
+    def describe(self) -> str:
+        low, high = self.interval
+        mark = "ok  " if self.meets_threshold else "FAIL"
+        line = f"{mark} {self.name}: {self.passes}/{self.runs} ({self.rate:.0%}"
+        if self.runs > 1:
+            line += f", {self.confidence:.0%} CI {low:.0%}-{high:.0%}"
+        line += f") needs >= {self.threshold:.0%}"
+        return line + (f" - {self.detail}" if self.detail and not self.meets_threshold else "")
+
+
+@dataclass
 class ExperimentResult:
     experiment: Experiment
     baseline: list[RunResult]
     chaos: list[RunResult]
     verdict: Verdict
     reason: str
+    probe_stats: list[ProbeStats] = field(default_factory=list)
 
     @staticmethod
     def _rate(runs: list[RunResult]) -> float | None:
@@ -80,6 +144,7 @@ class ExperimentResult:
             "baseline_pass_rate": self.baseline_pass_rate,
             "chaos_pass_rate": self.chaos_pass_rate,
             "faults": [{"type": f.kind, **f.params()} for f in exp.faults],
+            "probes": [p.to_dict() for p in self.probe_stats],
             "runs": [r.to_dict(include_traces) for r in [*self.baseline, *self.chaos]],
         }
 
@@ -94,13 +159,15 @@ class ExperimentResult:
             f"  chaos      : {pct(self.chaos_pass_rate)} of {len(self.chaos)} run(s) passed",
             f"  reason     : {self.reason}",
         ]
-        failed: dict[str, str] = {}
-        for run in self.chaos:
-            for p in run.probes:
-                if not p.passed:
-                    failed.setdefault(p.name, p.detail)
-        for name, detail in failed.items():
-            lines.append(f"  violated   : {name}" + (f" - {detail}" if detail else ""))
+        chaos_stats = [p for p in self.probe_stats if p.phase == "chaos"]
+        if len(self.chaos) > 1 or any(p.threshold < 1 for p in chaos_stats):
+            lines += [f"  probe      : {p.describe()}" for p in chaos_stats]
+        else:
+            lines += [
+                f"  violated   : {p.name}" + (f" - {p.detail}" if p.detail else "")
+                for p in chaos_stats
+                if not p.meets_threshold
+            ]
         return "\n".join(lines)
 
 
@@ -124,12 +191,42 @@ class Experiment:
     seed: int | None = 0
     baseline: bool = True
     tags: list[str] = field(default_factory=list)
+    #: Default ``min_pass_rate`` for probes that do not set their own (see :func:`probes.expect`).
+    pass_rate: float = 1.0
+    confidence: float = 0.95
+    #: Make the verdict inconclusive while a probe's confidence interval straddles its threshold.
+    require_confidence: bool = False
 
     def run(self) -> ExperimentResult:
         baseline = [self._run_once("baseline", i, []) for i in range(self.runs)] if self.baseline else []
         chaos = [self._run_once("chaos", i, self.faults) for i in range(self.runs)]
-        verdict, reason = self._judge(baseline, chaos)
-        return ExperimentResult(self, baseline, chaos, verdict, reason)
+        stats = self._stats("baseline", baseline) + self._stats("chaos", chaos)
+        verdict, reason = self._judge(baseline, chaos, stats)
+        return ExperimentResult(self, baseline, chaos, verdict, reason, stats)
+
+    def _threshold(self, probe: Probe) -> float:
+        return float(getattr(probe, "min_pass_rate", self.pass_rate))
+
+    def _stats(self, phase: str, runs: list[RunResult]) -> list[ProbeStats]:
+        if not runs:
+            return []
+        probes = [*self.probes, *(self.detection if phase == "chaos" else [])]
+        stats = []
+        for index, probe in enumerate(probes):
+            results = [run.probes[index] for run in runs]
+            failed = next((r for r in results if not r.passed), None)
+            stats.append(
+                ProbeStats(
+                    name=results[0].name,
+                    phase=phase,
+                    passes=sum(r.passed for r in results),
+                    runs=len(results),
+                    threshold=self._threshold(probe),
+                    confidence=self.confidence,
+                    detail=failed.detail if failed else "",
+                )
+            )
+        return stats
 
     def _run_once(self, phase: str, index: int, faults: list[Fault]) -> RunResult:
         seed = None if self.seed is None else self.seed + index
@@ -148,16 +245,31 @@ class Experiment:
         probes = [*self.probes, *(self.detection if phase == "chaos" else [])]
         return RunResult(phase, index, trace, [p(trace) for p in probes])
 
-    @staticmethod
-    def _judge(baseline: list[RunResult], chaos: list[RunResult]) -> tuple[Verdict, str]:
-        if baseline and not all(r.passed for r in baseline):
-            return Verdict.INCONCLUSIVE, "steady state does not hold without chaos - fix the baseline first"
+    def _judge(self, baseline: list[RunResult], chaos: list[RunResult], stats: list[ProbeStats]) -> tuple[Verdict, str]:
+        below = [s for s in stats if s.phase == "baseline" and not s.meets_threshold]
+        if below:
+            names = ", ".join(s.name for s in below)
+            return Verdict.INCONCLUSIVE, f"steady state does not hold without chaos ({names}) - fix the baseline first"
         if not any(r.faults_fired for r in chaos):
             return Verdict.INCONCLUSIVE, "no fault was triggered - check fault targets and instrumentation"
-        failed = [r for r in chaos if not r.passed]
-        if failed:
-            return Verdict.WEAKNESS, f"steady state violated in {len(failed)}/{len(chaos)} chaos run(s)"
-        return Verdict.HELD, "steady state held under all chaos runs"
+        chaos_stats = [s for s in stats if s.phase == "chaos"]
+        if self.require_confidence:
+            undecided = [s for s in chaos_stats if not s.confident]
+            if undecided:
+                hint = "; ".join(
+                    f"{s.name} needs about {runs_needed(s.threshold, s.confidence)} runs" for s in undecided
+                )
+                return Verdict.INCONCLUSIVE, f"not enough runs to decide at {self.confidence:.0%} confidence ({hint})"
+        failing = [s for s in chaos_stats if not s.meets_threshold]
+        if failing:
+            if all(s.threshold >= 1 for s in failing):
+                failed_runs = sum(not r.passed for r in chaos)
+                return Verdict.WEAKNESS, f"steady state violated in {failed_runs}/{len(chaos)} chaos run(s)"
+            names = ", ".join(f"{s.name} {s.rate:.0%} < {s.threshold:.0%}" for s in failing)
+            return Verdict.WEAKNESS, f"pass rate below threshold: {names}"
+        return Verdict.HELD, "steady state held at the required pass rates" if any(
+            s.threshold < 1 for s in chaos_stats
+        ) else "steady state held under all chaos runs"
 
 
 async def _await(awaitable: Any) -> Any:

@@ -75,7 +75,14 @@ Start in unit tests and CI against stubs, move to staging with real models, and 
 guarded production experiments with a kill switch, narrow targeting and low probability. See
 [safety.md](safety.md).
 
-## 10. Automate continuously
+## 10. Degrade security gracefully, and test both sides
+
+When a control fails, "fail open" gives up security and "fail closed" gives up availability. An attacker who
+can disrupt the control (for example with a guardrail DoS) wins either way. Prefer a third option, a
+*safe mode* such as read-only answers or no side-effecting tools, and verify it with security probes and
+availability probes in the same experiment (see [statistics.md](statistics.md)).
+
+## 11. Automate continuously
 
 Agent behaviour changes without a code change: the provider updates a model, someone edits a prompt,
 a new MCP server is connected. Run the catalog in CI and on a schedule so regressions are caught when

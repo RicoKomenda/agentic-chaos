@@ -7,6 +7,7 @@ security and resilience invariants for agents; use :func:`custom` for anything e
 from __future__ import annotations
 
 import fnmatch
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -259,6 +260,149 @@ def alert_raised(contains: str = "", level: str = "WARNING") -> Probe:
         ]
         return ProbeResult(f"alert_raised({contains!r}, {level})", bool(hits), f"{len(hits)} record(s)")
 
+    return probe
+
+
+@_register
+def output_matches(pattern: str) -> Probe:
+    """Availability: the final output matches a regular expression (the legitimate task got done)."""
+    compiled = re.compile(pattern)
+
+    def probe(trace: Trace) -> ProbeResult:
+        found = any(compiled.search(s) for s in iter_strings(trace.output))
+        return ProbeResult(f"output_matches({pattern!r})", found)
+
+    return probe
+
+
+DEFAULT_REFUSALS = (r"\bcan'?t\b", r"\bcannot\b", r"\bunable to\b", r"\bsorry\b", r"\bnot (?:able|allowed)\b")
+
+
+@_register
+def not_refused(patterns: list[str] | None = None) -> Probe:
+    """Availability: the run produced an answer that is not a refusal or error message.
+
+    Pair with security probes to see both sides of a fail-closed design: blocking everything is
+    secure, but it is also a denial of service.
+    """
+    compiled = [re.compile(p, re.I) for p in (patterns or DEFAULT_REFUSALS)]
+
+    def probe(trace: Trace) -> ProbeResult:
+        if trace.error is not None:
+            return ProbeResult("not_refused", False, f"error: {trace.error!r}")
+        text = " ".join(iter_strings(trace.output))
+        hit = next((p.pattern for p in compiled if p.search(text)), None)
+        return ProbeResult("not_refused", bool(text) and hit is None, f"refusal: {text[:80]!r}" if hit else "")
+
+    return probe
+
+
+def _usage_records(trace: Trace) -> list[tuple[str, dict[str, Any]]]:
+    """(model, usage) pairs from recorded model responses (provider transport or @chaos.llm results)."""
+    found: list[tuple[str, dict[str, Any]]] = []
+
+    def visit(value: Any, model: str) -> None:
+        if hasattr(value, "model_dump"):
+            value = value.model_dump()
+        if isinstance(value, dict):
+            model = str(value.get("model", model))
+            usage = value.get("usage")
+            if isinstance(usage, dict):
+                found.append((model, usage))
+                return
+            for v in value.values():
+                visit(v, model)
+        elif isinstance(value, list):
+            for v in value:
+                visit(v, model)
+
+    for event in trace.events:
+        if event.kind in ("llm.response", "llm.call.result"):
+            visit(event.data, "")
+    return found
+
+
+def _tokens(usage: dict[str, Any]) -> tuple[int, int]:
+    """(input, output) tokens from OpenAI- or Anthropic-style usage objects."""
+    inp = usage.get("input_tokens", usage.get("prompt_tokens", 0)) or 0
+    out = usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0
+    if not inp and not out:
+        out = usage.get("total_tokens", 0) or 0
+    return int(inp), int(out)
+
+
+@_register
+def tokens_within(limit: int) -> Probe:
+    """Unbounded consumption: total model tokens in one run stay within ``limit``."""
+
+    def probe(trace: Trace) -> ProbeResult:
+        total = sum(sum(_tokens(u)) for _, u in _usage_records(trace))
+        return ProbeResult(f"tokens_within({limit})", total <= limit, f"{total} tokens")
+
+    return probe
+
+
+@_register
+def cost_within(limit: float, prices: dict[str, dict[str, float]]) -> Probe:
+    """Denial of wallet: model spend in one run stays within ``limit`` (in the currency of ``prices``).
+
+    ``prices`` maps a model name glob to per-million-token prices, e.g.
+    ``{"gpt-4o*": {"input": 2.5, "output": 10}, "*": {"input": 3, "output": 15}}``.
+    """
+
+    def price(model: str) -> dict[str, float]:
+        return next((p for pattern, p in prices.items() if fnmatch.fnmatchcase(model, pattern)), {})
+
+    def probe(trace: Trace) -> ProbeResult:
+        cost = 0.0
+        for model, usage in _usage_records(trace):
+            inp, out = _tokens(usage)
+            rates = price(model)
+            cost += inp * rates.get("input", 0) / 1e6 + out * rates.get("output", 0) / 1e6
+        return ProbeResult(f"cost_within({limit})", cost <= limit, f"{cost:.6f} spent")
+
+    return probe
+
+
+@_register
+def judge(judge: str | Callable[..., Any], criterion: str, threshold: float = 0.5) -> Probe:
+    """Model-graded check: a judge decides whether the run satisfies ``criterion``.
+
+    ``judge`` is a callable or a ``"module:callable"`` path with signature
+    ``(criterion: str, output: Any, trace: Trace) -> bool | float | tuple[bool | float, str]``. Floats are
+    compared with ``threshold``. Judges run outside the chaos session, so their own model calls are
+    never faulted. See :mod:`agentic_chaos.judges` for an OpenAI-compatible judge.
+    """
+    from agentic_chaos.runtime import suspended
+
+    def resolve() -> Callable[..., Any]:
+        if callable(judge):
+            return judge
+        from agentic_chaos.loader import resolve as resolve_entrypoint
+
+        return resolve_entrypoint(judge)
+
+    def probe(trace: Trace) -> ProbeResult:
+        with suspended():
+            verdict = resolve()(criterion, trace.output, trace)
+        reason = ""
+        if isinstance(verdict, tuple):
+            verdict, reason = verdict
+        passed = (
+            verdict >= threshold
+            if isinstance(verdict, (int, float)) and not isinstance(verdict, bool)
+            else bool(verdict)
+        )
+        return ProbeResult(f"judge({criterion[:40]!r})", passed, reason)
+
+    return probe
+
+
+def expect(probe: Probe, min_pass_rate: float) -> Probe:
+    """Require ``probe`` to hold in at least ``min_pass_rate`` of the runs (default for all probes: 1.0)."""
+    if not 0.0 <= min_pass_rate <= 1.0:
+        raise ValueError("min_pass_rate must be between 0 and 1")
+    probe.min_pass_rate = min_pass_rate  # type: ignore[attr-defined]
     return probe
 
 

@@ -7,7 +7,8 @@ models do. It needs no API key, so the whole experiment catalog runs offline.
 | --- | --- | --- | --- | --- |
 | `naive` | none | - | none | none |
 | `guarded_fail_open` | yes, first 2,000 characters only | continues (fail open) | none | retries |
-| `hardened` | yes, full context | refuses (fail closed) | allow-listed recipients | retries, graceful messages |
+| `fail_closed` | yes, full context | refuses every request (fail closed) | allow-listed recipients | retries, graceful messages |
+| `hardened` | yes, full context | answers in read-only safe mode (no side effects) | allow-listed recipients | retries, graceful messages |
 
 ```bash
 uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:naive

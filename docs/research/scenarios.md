@@ -356,11 +356,11 @@ Priorities: **P1** has a high security payoff and fits the current design. **P2*
 
 | Priority | Addition | Kind | Scenarios |
 | --- | --- | --- | --- |
-| P1 | `success_rate_at_least`, `tokens_within`, `cost_within` | probes | C2, C3, D2, A2 |
+| P1 | ~~availability (`not_refused`, `output_matches` + per-probe pass rates), `tokens_within`, `cost_within`~~ (done) | probes | C2, C3, D2, A2 |
 | P1 | `force_fallback` (route to fallback model/host) + `controls_invoked` probe | fault + probe | A3, B1 |
 | P1 | ~~`context_flood` (pad then payload)~~ (done as `flood`, `asi01-context-flood`) | fault | C4, D3 |
 | P1 | ~~`timeout_after_commit` + idempotency probe~~ (done; `max_settlements` for payments) | fault + probe | D1 |
-| P1 | guardrail-DoS experiment pair (security **and** availability) | catalog | C2 |
+| P1 | ~~guardrail-DoS experiment pair (security **and** availability)~~ (done: `control-guardrail-dos` + safe mode) | catalog | C2 |
 | P1 | approval-control catalog experiments (outage ≠ approve) | catalog | C6 |
 | P2 | `region_failover` + `region_in` probe | fault + probe | A4 |
 | P2 | ~~`auth_error` (401/403)~~ (done) | fault | E2 |

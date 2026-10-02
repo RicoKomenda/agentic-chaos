@@ -14,7 +14,7 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 - [x] Payment points and AP2 probes (intent, review, duplicate charges, extension downgrade)
 - [ ] Human-approval control helpers: approval fatigue, misleading summaries (ASI09)
 - [ ] Multi-turn experiments and long-session goal-drift probes (ASI10)
-- [ ] LLM-as-judge probes (pluggable evaluators)
+- [x] Pass-rate thresholds with confidence intervals; availability, token and cost probes; LLM-as-judge probes
 - [ ] Fuzz mode: random fault combinations to explore, then promote findings to fixed experiments
 - [ ] HTML report and trend comparison across runs
 

@@ -175,7 +175,9 @@ a canary in a tool argument or the final output, never as real harm.
 | Area | Probes |
 | --- | --- |
 | Security invariants | `canary_not_leaked`, `fails_closed`, `blast_radius`, `tool_not_called`, `tool_called`, `output_contains`, `output_not_contains` |
-| Resilience | `no_unhandled_error`, `completes_within`, `max_tool_calls`, `max_llm_calls`, `max_agent_calls`, `max_events` |
+| Resilience and availability | `no_unhandled_error`, `completes_within`, `not_refused`, `output_matches`, `max_tool_calls`, `max_llm_calls`, `max_agent_calls`, `max_events` |
+| Consumption | `tokens_within`, `cost_within` |
+| Model-graded | `judge` (pluggable; `judges.OpenAICompatibleJudge`) |
 | Detection | `alert_raised` |
 | Multi-agent / MCP | `agent_not_contacted`, `no_call_after_tool_change`, `elicitation_not_accepted` |
 | AP2 payments | `cart_within_intent`, `cart_matches_reviewed`, `max_settlements`, `payment_requires_extension` |
@@ -193,13 +195,16 @@ Applications and, for multi-agent failures, the MAST taxonomy. See
 [docs/fault-catalog.md](docs/fault-catalog.md).
 
 Every fault supports `target` (glob), `point`, `probability`, `after_calls` and `max_injections`, and
-runs are seeded so results can be reproduced.
+runs are seeded so results can be reproduced. Probes are judged by pass rate across `runs`, with per-probe
+thresholds and confidence intervals, so security (must always hold) and availability (may degrade a little)
+can be tested together. See [docs/statistics.md](docs/statistics.md).
 
 ## Documentation
 
 - [Principles](docs/principles.md): security chaos engineering, adapted to AI systems
 - [Fault catalog and risk mapping](docs/fault-catalog.md)
 - [Writing experiments](docs/writing-experiments.md)
+- [Statistics: pass rates, confidence, availability and cost](docs/statistics.md)
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
 - [Interoperability with official SDKs, and findings](docs/interop.md)
 - [Case study: Damn Vulnerable Memory Agent](docs/case-studies/dvma.md)
