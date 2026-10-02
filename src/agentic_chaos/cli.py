@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from agentic_chaos import __version__, faults, loader, probes, runtime, schema
+from agentic_chaos import __version__, faults, loader, probes, report, runtime, schema
 from agentic_chaos.experiment import Verdict
 from agentic_chaos.redact import Redactor, redact
 
@@ -30,6 +30,10 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--traces", action="store_true", help="include full traces in the JSON report")
     run.add_argument("--no-redact", action="store_true", help="do not redact secrets in the report (unsafe)")
     run.add_argument("--redact-pattern", action="append", default=[], help="extra regex to redact (repeatable)")
+    run.add_argument("--junit", type=Path, help="write a JUnit XML report (one test case per experiment)")
+    run.add_argument("--html", type=Path, help="write a self-contained HTML report")
+    run.add_argument("--markdown", type=Path, help="write a Markdown summary (e.g. $GITHUB_STEP_SUMMARY)")
+    run.add_argument("--otel", action="store_true", help="export results as OpenTelemetry spans (needs the otel extra)")
 
     proxy = sub.add_parser(
         "mcp-proxy",
@@ -102,8 +106,19 @@ def main(argv: list[str] | None = None) -> int:
         results.append(result)
         print(result.summary(), end="\n\n")
 
+    redactor: Redactor | bool = False if args.no_redact else Redactor(extra_patterns=args.redact_pattern)
+    outputs = {args.junit: report.to_junit, args.html: report.to_html, args.markdown: report.to_markdown}
+    for path, render in outputs.items():
+        if path:
+            mode = "a" if args.markdown and path == args.markdown else "w"  # step summaries are appended to
+            with open(path, mode, encoding="utf-8") as handle:
+                handle.write(render(results, redactor=redactor))
+            print(f"report written to {path}")
+    if args.otel:
+        from agentic_chaos.integrations import otel
+
+        otel.export(results, redactor=redactor)
     if args.report:
-        redactor: Redactor | bool = False if args.no_redact else Redactor(extra_patterns=args.redact_pattern)
         args.report.write_text(
             json.dumps([r.to_dict(args.traces, redactor=redactor) for r in results], indent=2), encoding="utf-8"
         )

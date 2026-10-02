@@ -179,6 +179,19 @@
     "Redactor",
     "redact"
   ],
+  "agentic_chaos.report": [
+    "to_html",
+    "to_junit",
+    "to_markdown"
+  ],
+  "agentic_chaos.pytest_plugin": [
+    "ChaosFixture",
+    "ChaosHypothesisFailed"
+  ],
+  "agentic_chaos.integrations.otel": [
+    "MAX_EVENTS",
+    "export"
+  ],
   "agentic_chaos.runtime": [
     "DISABLE_ENV",
     "Event",

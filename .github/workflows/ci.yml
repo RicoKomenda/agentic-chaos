@@ -56,3 +56,25 @@ jobs:
           node-version: "20"
       - run: uv sync --group interop
       - run: uv run pytest -m interop -v
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hardened agent passes (action self-test)
+        uses: ./
+        with:
+          experiments: experiments/*.yaml
+          target: examples.mailbot.agent:hardened
+          report-name: self-test-hardened
+      - name: Naive agent fails (fail-on never, check the exit code)
+        id: naive
+        uses: ./
+        with:
+          experiments: experiments/asi08-tool-outage.yaml
+          fail-on: never
+          report-name: self-test-naive
+      - shell: bash
+        env:
+          CODE: ${{ steps.naive.outputs.exit-code }}
+        run: test "$CODE" = "1"

@@ -1,0 +1,111 @@
+name: Agentic Chaos
+description: Run security chaos experiments against an AI agent and report the results.
+author: Agentic Chaos contributors
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  experiments:
+    description: Experiment files or directories (space-separated; shell globs are expanded).
+    required: true
+  target:
+    description: Override the target entrypoint of every experiment (module:callable).
+    required: false
+    default: ""
+  runs:
+    description: Override the number of runs per experiment.
+    required: false
+    default: ""
+  python-version:
+    description: Python version to set up.
+    required: false
+    default: "3.12"
+  version:
+    description: agentic-chaos version spec to install from PyPI (e.g. "==1.0.0"). Empty installs the action's own revision.
+    required: false
+    default: ""
+  install:
+    description: Extra command that installs the system under test (e.g. "pip install -e .").
+    required: false
+    default: ""
+  fail-on:
+    description: "When to fail the job: weakness (default), inconclusive (weakness or inconclusive), or never."
+    required: false
+    default: weakness
+  report-name:
+    description: Name of the uploaded report artifact.
+    required: false
+    default: agentic-chaos-report
+
+outputs:
+  exit-code:
+    description: "agentic-chaos exit code: 0 held, 1 weakness found, 2 inconclusive or invalid input."
+    value: ${{ steps.run.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install agentic-chaos
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        ACTION_PATH: ${{ github.action_path }}
+        INSTALL: ${{ inputs.install }}
+      run: |
+        if [ -n "$VERSION" ]; then
+          python -m pip install "agentic-chaos$VERSION"
+        else
+          python -m pip install "$ACTION_PATH"
+        fi
+        if [ -n "$INSTALL" ]; then
+          bash -c "$INSTALL"
+        fi
+
+    - name: Run experiments
+      id: run
+      shell: bash
+      env:
+        EXPERIMENTS: ${{ inputs.experiments }}
+        TARGET: ${{ inputs.target }}
+        RUNS: ${{ inputs.runs }}
+        REPORT_DIR: ${{ runner.temp }}/agentic-chaos
+      run: |
+        mkdir -p "$REPORT_DIR"
+        args=(--junit "$REPORT_DIR/junit.xml" --html "$REPORT_DIR/report.html" --report "$REPORT_DIR/report.json")
+        args+=(--markdown "$GITHUB_STEP_SUMMARY")
+        if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
+        if [ -n "$RUNS" ]; then args+=(--runs "$RUNS"); fi
+        set +e
+        # word splitting and globbing of EXPERIMENTS are intended (multiple paths, globs)
+        # shellcheck disable=SC2086
+        agentic-chaos run $EXPERIMENTS "${args[@]}"
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Upload reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.report-name }}
+        path: ${{ runner.temp }}/agentic-chaos
+        if-no-files-found: ignore
+
+    - name: Apply fail-on policy
+      shell: bash
+      env:
+        CODE: ${{ steps.run.outputs.exit-code }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        case "$FAIL_ON:$CODE" in
+          never:*) exit 0 ;;
+          *:0) exit 0 ;;
+          weakness:1|inconclusive:1|inconclusive:2) echo "::error::agentic-chaos exit code $CODE"; exit 1 ;;
+          weakness:2) echo "::warning::inconclusive experiments or invalid input (exit code 2)"; exit 0 ;;
+          *) echo "::error::unknown fail-on '$FAIL_ON'"; exit 1 ;;
+        esac
