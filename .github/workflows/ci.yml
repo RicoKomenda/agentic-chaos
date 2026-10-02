@@ -23,5 +23,8 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest
-      - name: Hardened demo agent passes the catalog
-        run: uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened
+      - name: Hardened demo targets pass the catalogs
+        run: |
+          uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened
+          uv run agentic-chaos run experiments/mcp --target examples.mcp_demo.host:hardened
+          uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened

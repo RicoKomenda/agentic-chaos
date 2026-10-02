@@ -58,6 +58,23 @@ uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hard
 
 Exit codes are CI-friendly: `0` all hypotheses held, `1` weakness found, `2` inconclusive.
 
+### Protocol layers: MCP, multi-agent / A2A, AP2
+
+The same approach works at the protocol level, with offline demo targets for each layer:
+
+```bash
+uv run agentic-chaos run experiments/mcp                        # MCP: rug pull, tool shadowing, sampling, elicitation, ...
+uv run agentic-chaos run experiments/multi-agent experiments/ap2 # A2A card spoofing, delegation loops, AP2 mandates, ...
+```
+
+To put any real MCP server under chaos for any client (Claude Code, IDEs, agent frameworks), use the proxy:
+
+```bash
+agentic-chaos mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml -- npx -y @modelcontextprotocol/server-everything
+```
+
+See [docs/protocols.md](docs/protocols.md).
+
 ## How it works
 
 1. **Instrument** the seams of your application. Decorators are no-ops outside an experiment, so they can stay in production code.
@@ -138,21 +155,37 @@ a canary in a tool argument or the final output, never as real harm.
 
 ## What's included
 
-**Injection points**: `llm.call`, `llm.response`, `tool.describe`, `tool.call`, `tool.result`, `memory.read`, `control`.
+**Injection points**: `llm.call`, `llm.response`, `tool.describe`, `tool.call`, `tool.result`, `memory.read`,
+`resource.read`, `control`, `agent.discover`, `agent.call`, `agent.message`, `payment.call`, `payment.result`,
+`mcp.tools`, `mcp.server_request`.
 
 **Faults** (`agentic-chaos faults`):
 
 | Category | Faults |
 | --- | --- |
-| Reliability | `latency`, `timeout`, `error`, `rate_limit`, `empty`, `truncate`, `corrupt_json` |
-| Security | `inject_instruction`, `poison_tool_description`, `poison_memory`, `control_outage`, `force_verdict` |
+| Reliability | `latency`, `timeout`, `error`, `rate_limit`, `empty`, `truncate`, `corrupt_json`, `timeout_after_commit` |
+| Security | `inject_instruction`, `poison_tool_description`, `poison_memory`, `flood`, `patch`, `control_outage`, `force_verdict` |
+| Agents / A2A | `spoof_agent_card` (plus `inject_instruction`, `patch`, `timeout` on `agent.*`) |
+| MCP | `shadow_tool`, `mcp_sampling`, `mcp_elicitation`, `mcp_list_changed_flood` |
 
-**Probes** (`agentic-chaos probes`): `canary_not_leaked`, `fails_closed`, `tool_not_called`, `tool_called`,
-`max_tool_calls`, `max_llm_calls`, `no_unhandled_error`, `completes_within`, `output_contains`,
-`output_not_contains`, `alert_raised`, plus `probes.custom(...)`.
+**Probes** (`agentic-chaos probes`):
 
-**Experiment catalog** ([`experiments/`](experiments)): ready-made experiments mapped to the OWASP Top 10
-for Agentic Applications (ASI01-ASI10) and the OWASP Top 10 for LLM Applications. See
+| Area | Probes |
+| --- | --- |
+| Security invariants | `canary_not_leaked`, `fails_closed`, `blast_radius`, `tool_not_called`, `tool_called`, `output_contains`, `output_not_contains` |
+| Resilience | `no_unhandled_error`, `completes_within`, `max_tool_calls`, `max_llm_calls`, `max_agent_calls`, `max_events` |
+| Detection | `alert_raised` |
+| Multi-agent / MCP | `agent_not_contacted`, `no_call_after_tool_change`, `elicitation_not_accepted` |
+| AP2 payments | `cart_within_intent`, `cart_matches_reviewed`, `max_settlements`, `payment_requires_extension` |
+
+Plus `probes.custom(...)` for anything else.
+
+**Integrations**: `httpx` transports for model providers (`integrations.httpx`) and A2A (`integrations.a2a`), and the MCP
+chaos proxy (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`).
+
+**Experiment catalog** ([`experiments/`](experiments)): ready-made experiments for single agents, MCP, multi-agent
+systems and AP2, mapped to the OWASP Top 10 for Agentic Applications (ASI01-ASI10), the OWASP Top 10 for LLM
+Applications and, for multi-agent failures, the MAST taxonomy. See
 [docs/fault-catalog.md](docs/fault-catalog.md).
 
 Every fault supports `target` (glob), `point`, `probability`, `after_calls` and `max_injections`, and
@@ -163,6 +196,7 @@ runs are seeded so results can be reproduced.
 - [Principles](docs/principles.md): security chaos engineering, adapted to AI systems
 - [Fault catalog and risk mapping](docs/fault-catalog.md)
 - [Writing experiments](docs/writing-experiments.md)
+- [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
 - [Running chaos safely](docs/safety.md)
 - [Landscape and related work](docs/landscape.md)
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)
