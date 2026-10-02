@@ -20,20 +20,17 @@ floods to the client and records how the client answers.
 
 Use it in-process (``async with McpChaosProxy(cmd) as endpoint``) inside an experiment, or as a
 stand-alone stdio proxy in front of any MCP client: ``agentic-chaos mcp-proxy --faults f.yaml -- cmd``.
+For servers that speak Streamable HTTP, see :mod:`agentic_chaos.mcp.http`.
 """
 
 from __future__ import annotations
 
 import asyncio
-import itertools
 import json
 import sys
 from typing import Any
 
-from agentic_chaos.faults import ChaosError, ChaosRateLimit, ChaosTimeout, Override
-from agentic_chaos.runtime import intercept, record
-
-REQUEST_TIMEOUT = -32001  # code used by MCP SDKs for request timeouts
+from agentic_chaos.mcp.core import McpChaosCore
 
 
 class Endpoint:
@@ -85,12 +82,13 @@ class StdioEndpoint:
 
 
 class McpChaosProxy:
+    """stdio transport: spawns the server as a subprocess and relays newline-delimited JSON-RPC."""
+
     def __init__(self, command: list[str], *, env: dict[str, str] | None = None) -> None:
         self.command = command
         self.env = env
+        self.core = McpChaosCore()
         self._pending: dict[Any, tuple[str, dict[str, Any]]] = {}
-        self._own: dict[str, str] = {}
-        self._ids = itertools.count(1)
 
     async def start(self, downstream: Endpoint | StdioEndpoint | None = None) -> Any:
         self.downstream = downstream or Endpoint()
@@ -126,66 +124,24 @@ class McpChaosProxy:
             await self.downstream.close()
         await self.aclose()
 
-    # --- client -> server -------------------------------------------------------------------
-
     async def _pump_client(self) -> None:
         while (message := await self.downstream.read()) is not None:
-            if "method" not in message and message.get("id") in self._own:
-                self._record_client_answer(message)
+            if self.core.is_own_answer(message):
                 continue
             if "method" in message and "id" in message:
-                record("mcp.request", message["method"], params=message.get("params", {}))
-                if message["method"] == "tools/call" and not await self._before_tool_call(message):
+                # faults may sleep (latency); keep the event loop responsive
+                decision = await asyncio.to_thread(self.core.client_request, message)
+                for request in decision.server_requests:
+                    await self.downstream.write(request)
+                if decision.reply is not None:
+                    await self.downstream.write(decision.reply)
                     continue
                 self._pending[message["id"]] = (message["method"], message.get("params", {}))
+                for duplicate in decision.duplicates:
+                    self._to_server(duplicate)
             self._to_server(message)
         if self.proc.stdin and not self.proc.stdin.is_closing():
             self.proc.stdin.close()
-
-    async def _before_tool_call(self, message: dict[str, Any]) -> bool:
-        """Apply call-time faults. Returns False if the proxy answered instead of the server."""
-        params = message.get("params", {})
-        name = params.get("name", "")
-        record("tool.call", name, kwargs=params.get("arguments", {}))
-        try:
-            intercept("tool.call", name, None, arguments=params.get("arguments", {}))
-        except Override as forced:
-            await self._reply(message, result=_text_result(str(forced.value)))
-            return False
-        except ChaosTimeout as exc:
-            await self._reply(message, error={"code": REQUEST_TIMEOUT, "message": str(exc)})
-            return False
-        except ChaosRateLimit as exc:
-            await self._reply(message, result=_text_result(f"Error: {exc}", is_error=True))
-            return False
-        except ChaosError as exc:
-            await self._reply(message, result=_text_result(f"Error: {exc}", is_error=True))
-            return False
-        for request in intercept("mcp.server_request", name, []) or []:
-            await self._server_initiated(request)
-        return True
-
-    async def _server_initiated(self, request: dict[str, Any]) -> None:
-        if request["method"].startswith("notifications/"):
-            record("mcp.notification", request["method"])
-            await self.downstream.write({"jsonrpc": "2.0", **request})
-            return
-        request_id = f"agentic-chaos-{next(self._ids)}"
-        self._own[request_id] = request["method"]
-        record("mcp.server_request", request["method"], params=request.get("params", {}))
-        await self.downstream.write({"jsonrpc": "2.0", "id": request_id, **request})
-
-    def _record_client_answer(self, message: dict[str, Any]) -> None:
-        method = self._own.pop(message["id"])
-        if method == "sampling/createMessage":
-            record("mcp.sampling.response", method, result=message.get("result"), error=message.get("error"))
-        elif method == "elicitation/create":
-            result = message.get("result") or {}
-            record(
-                "mcp.elicitation.response", method, action=result.get("action", "error"), content=result.get("content")
-            )
-
-    # --- server -> client -------------------------------------------------------------------
 
     async def _pump_server(self) -> None:
         assert self.proc.stdout is not None
@@ -193,63 +149,14 @@ class McpChaosProxy:
             if not line.strip():
                 continue
             message = json.loads(line)
+            if self.core.is_dropped(message):
+                continue
             if "method" not in message and message.get("id") in self._pending:
                 method, params = self._pending.pop(message["id"])
-                try:
-                    message = self._transform(method, params, message)
-                except ChaosTimeout as exc:
-                    message = {
-                        "jsonrpc": "2.0",
-                        "id": message["id"],
-                        "error": {"code": REQUEST_TIMEOUT, "message": str(exc)},
-                    }
+                message = await asyncio.to_thread(self.core.server_response, method, params, message)
             await self.downstream.write(message)
         await self.downstream.write(None)
-
-    def _transform(self, method: str, params: dict[str, Any], message: dict[str, Any]) -> dict[str, Any]:
-        result = message.get("result")
-        if not isinstance(result, dict):
-            return message
-        if method == "tools/list":
-            tools = [dict(t) for t in result.get("tools", [])]
-            for tool in tools:
-                tool["description"] = intercept("tool.describe", tool["name"], tool.get("description", ""))
-            tools = intercept("mcp.tools", "tools/list", tools)
-            for tool in tools:
-                record("tool.describe", tool["name"], description=tool.get("description", ""))
-            result = {**result, "tools": tools}
-        elif method == "tools/call":
-            name = params.get("name", "")
-            content = result.get("content", [])
-            text = "\n".join(c.get("text", "") for c in content if c.get("type") == "text")
-            changed = intercept("tool.result", name, text)
-            if changed != text:
-                others = [c for c in content if c.get("type") != "text"]
-                content = [
-                    {"type": "text", "text": changed if isinstance(changed, str) else json.dumps(changed)},
-                    *others,
-                ]
-                result = {**result, "content": content}
-            record("tool.call.result", name, result=changed)
-        elif method == "resources/read":
-            contents = []
-            for item in result.get("contents", []):
-                if "text" in item:
-                    item = {**item, "text": intercept("resource.read", item.get("uri", ""), item["text"])}
-                    record("resource.read", item.get("uri", ""), text=item["text"])
-                contents.append(item)
-            result = {**result, "contents": contents}
-        return {**message, "result": result}
-
-    # --- helpers ----------------------------------------------------------------------------
 
     def _to_server(self, message: dict[str, Any]) -> None:
         assert self.proc.stdin is not None
         self.proc.stdin.write((json.dumps(message, separators=(",", ":")) + "\n").encode())
-
-    async def _reply(self, request: dict[str, Any], **body: Any) -> None:
-        await self.downstream.write({"jsonrpc": "2.0", "id": request["id"], **body})
-
-
-def _text_result(text: str, is_error: bool = False) -> dict[str, Any]:
-    return {"content": [{"type": "text", "text": text}], "isError": is_error}

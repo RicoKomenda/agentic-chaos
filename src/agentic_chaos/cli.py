@@ -25,12 +25,18 @@ def main(argv: list[str] | None = None) -> int:
 
     proxy = sub.add_parser(
         "mcp-proxy",
-        help="run a fault-injecting MCP proxy (stdio) in front of an MCP server",
-        description="Example: agentic-chaos mcp-proxy --faults rug-pull.yaml -- npx -y <mcp-server-package>",
+        help="run a fault-injecting MCP proxy in front of an MCP server (stdio or Streamable HTTP)",
+        description=(
+            "stdio:  agentic-chaos mcp-proxy --faults f.yaml -- npx -y <mcp-server-package>\n"
+            "HTTP:   agentic-chaos mcp-proxy --faults f.yaml --upstream https://host/mcp --listen 127.0.0.1:8765"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     proxy.add_argument("--faults", type=Path, required=True, help="kind: McpProxy file with faults and probes")
     proxy.add_argument("--trace", type=Path, help="write the recorded trace and probe results as JSON on exit")
-    proxy.add_argument("server", nargs=argparse.REMAINDER, help="-- followed by the MCP server command")
+    proxy.add_argument("--upstream", help="Streamable HTTP endpoint of the MCP server (HTTP mode)")
+    proxy.add_argument("--listen", default="127.0.0.1:8765", help="address for HTTP mode (default 127.0.0.1:8765)")
+    proxy.add_argument("server", nargs=argparse.REMAINDER, help="-- followed by the MCP server command (stdio mode)")
 
     sub.add_parser("faults", help="list available faults")
     sub.add_parser("probes", help="list available probes")
@@ -73,17 +79,27 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
     from agentic_chaos.runtime import Session, bound
 
     command = args.server[1:] if args.server[:1] == ["--"] else args.server
-    if not command:
-        print("error: missing MCP server command after --", file=sys.stderr)
+    if not command and not args.upstream:
+        print("error: give --upstream URL (HTTP) or -- followed by the server command (stdio)", file=sys.stderr)
         return 2
     fault_list, probe_list, seed = loader.load_proxy_config(args.faults)
     session = Session(fault_list, seed=seed)
 
     async def serve() -> None:
         with bound(session):
-            proxy = McpChaosProxy(command)
-            await proxy.start(await StdioEndpoint().open())
-            await proxy.wait()
+            if args.upstream:
+                from agentic_chaos.mcp.http import McpHttpProxy
+
+                host, _, port = args.listen.rpartition(":")
+                proxy_http = McpHttpProxy(args.upstream)
+                server = await proxy_http.serve(host or "127.0.0.1", int(port))
+                print(f"[agentic-chaos] MCP chaos proxy listening on {proxy_http.url}", file=sys.stderr)
+                async with server:
+                    await server.serve_forever()
+            else:
+                proxy = McpChaosProxy(command)
+                await proxy.start(await StdioEndpoint().open())
+                await proxy.wait()
 
     try:
         asyncio.run(serve())

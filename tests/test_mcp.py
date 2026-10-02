@@ -81,3 +81,16 @@ def test_stdio_cli(tmp_path):
     assert json.loads(proc.stdout)["result"]["tools"]
     assert "PASS no_call_after_tool_change" in proc.stderr
     assert json.loads(trace.read_text())["trace"]["events"]
+
+
+def test_duplicate_tool_call_answers_client_once():
+    session = Session([faults.Duplicate("send_email")])
+    replies = run(session, {"id": 1, "method": "tools/call", "params": {"name": "send_email", "arguments": {}}})
+    assert [r["id"] for r in replies] == [1]
+    assert len(session.trace.of("tool.call", "send_email")) == 2
+
+
+def test_auth_error_over_stdio_is_tool_error():
+    session = Session([faults.AuthError("fetch_page")])
+    (reply,) = run(session, {"id": 1, "method": "tools/call", "params": {"name": "fetch_page", "arguments": {}}})
+    assert reply["result"]["isError"] and "invalid_token" in reply["result"]["content"][0]["text"]
