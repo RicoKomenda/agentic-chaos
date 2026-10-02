@@ -29,7 +29,7 @@ that never fires - these are found by experiment, not by review.
 ## Quick start
 
 ```bash
-git clone <this repo> && cd agentic-chaos
+git clone https://github.com/RicoKomenda/agentic-chaos.git && cd agentic-chaos
 uv sync                      # or: pip install -e .
 uv run agentic-chaos run experiments/*.yaml
 ```
@@ -161,6 +161,7 @@ runs are seeded so results can be reproduced.
 - [Writing experiments](docs/writing-experiments.md)
 - [Running chaos safely](docs/safety.md)
 - [Landscape and related work](docs/landscape.md)
+- [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Contributing

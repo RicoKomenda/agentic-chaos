@@ -1,6 +1,7 @@
 # Roadmap
 
-This is a direction, not a commitment. Discussion happens in issues.
+This is a direction, not a commitment. Discussion happens in issues. The scenario research behind many of these
+items, with priorities, is in [research/scenarios.md](research/scenarios.md#proposed-additions-to-agentic-chaos).
 
 ## Library
 
