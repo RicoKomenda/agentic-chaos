@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*.*.*"]  # full versions only; the moving major tag (v1) for the Action does not release
 
 permissions:
   contents: read
