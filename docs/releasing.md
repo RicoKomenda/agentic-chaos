@@ -7,7 +7,8 @@ Releases are built and published by `.github/workflows/release.yml` when a versi
 1. On PyPI, add a **trusted publisher** for the `agentic-chaos` project: owner `RicoKomenda`, repository
    `agentic-chaos`, workflow `release.yml`, environment `pypi`. No API token is stored anywhere.
 2. In the GitHub repository settings, create the environment `pypi` and require a reviewer for it.
-3. Optionally do the same for TestPyPI (environment `testpypi`) to rehearse a release.
+3. For the docs site: Settings > Pages > Source "GitHub Actions", then add the repository variable `DOCS_DEPLOY=true`.
+4. Optionally do the same for TestPyPI (environment `testpypi`) to rehearse a release.
 
 ## Each release
 

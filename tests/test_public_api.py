@@ -38,19 +38,41 @@ MODULES = [
 ]
 
 
+#: Adapters for optional third-party packages; checked only where those packages are installed.
+OPTIONAL = {
+    "agentic_chaos.integrations.langchain",
+    "agentic_chaos.integrations.openai_agents",
+    "agentic_chaos.integrations.pydantic_ai",
+    "agentic_chaos.integrations.otel",
+}
+
+
+def importable() -> dict[str, object]:
+    modules = {}
+    for name in MODULES:
+        try:
+            modules[name] = importlib.import_module(name)
+        except ImportError:
+            assert name in OPTIONAL, f"{name} failed to import"
+    return modules
+
+
 def current() -> dict[str, list[str]]:
-    return {name: sorted(importlib.import_module(name).__all__) for name in MODULES}
+    return {name: sorted(module.__all__) for name, module in importable().items()}
 
 
 def test_every_exported_name_exists():
-    for name in MODULES:
-        module = importlib.import_module(name)
+    for name, module in importable().items():
         assert [n for n in module.__all__ if not hasattr(module, n)] == [], name
 
 
 def test_public_api_matches_snapshot():
-    assert current() == json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    snapshot = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    assert set(snapshot) == set(MODULES)
+    found = current()
+    assert found == {name: snapshot[name] for name in found}
 
 
 if __name__ == "__main__":
+    assert set(current()) == set(MODULES), "install the interop group to regenerate the full snapshot"
     SNAPSHOT.write_text(json.dumps(current(), indent=2) + "\n", encoding="utf-8")

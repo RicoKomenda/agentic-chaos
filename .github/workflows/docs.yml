@@ -19,13 +19,14 @@ jobs:
       - run: uv sync --only-group docs
       - run: uv run --only-group docs mkdocs build --strict --site-dir site
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name == 'push' && !github.event.repository.private
+        if: github.event_name == 'push' && vars.DOCS_DEPLOY == 'true'
         with:
           path: site
 
   deploy:
-    # GitHub Pages for private repositories needs a paid plan; deploy once the repository is public
-    if: github.event_name == 'push' && !github.event.repository.private
+    # Enable GitHub Pages (Settings > Pages > Source: GitHub Actions) and set the repository
+    # variable DOCS_DEPLOY=true to publish the site on every push to main.
+    if: github.event_name == 'push' && vars.DOCS_DEPLOY == 'true'
     needs: build
     runs-on: ubuntu-latest
     permissions:
