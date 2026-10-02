@@ -9,6 +9,7 @@ code can ship to production unchanged.
 from __future__ import annotations
 
 import contextvars
+import copy
 import fnmatch
 import logging
 import random
@@ -93,8 +94,13 @@ class Session:
         self.trace = Trace()
         self._seen: Counter[tuple[int, str]] = Counter()  # per fault and target name
         self._fired: Counter[int] = Counter()
+        self._history: dict[tuple[str, str], list[Any]] = {}
 
     def intercept(self, point: str, name: str, value: Any, **context: Any) -> Any:
+        history = self._history.setdefault((point, name), [])
+        previous = list(history)
+        if value is not None:
+            history.append(copy.deepcopy(value))
         for index, fault in enumerate(self.faults):
             if not fault.matches(point, name):
                 continue
@@ -107,7 +113,7 @@ class Session:
                 continue
             self._fired[index] += 1
             self.trace.record("fault", fault.kind, point=point, target=name, params=fault.params())
-            value = fault.apply(value, InjectionContext(point, name, self, context))
+            value = fault.apply(value, InjectionContext(point, name, self, context, previous))
         return value
 
 
@@ -117,6 +123,8 @@ class InjectionContext:
     name: str
     session: Session
     extra: dict[str, Any]
+    #: Earlier (unfaulted) values seen at this point and target, oldest first - used by replay faults.
+    previous: list[Any] = field(default_factory=list)
 
     @property
     def rng(self) -> random.Random:

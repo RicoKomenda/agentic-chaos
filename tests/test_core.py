@@ -118,3 +118,40 @@ def test_agent_target_name_from_argument():
         with pytest.raises(TimeoutError):
             send("https://b.example/x", "hi")
     assert [e.name for e in session.trace.of("agent.call")] == ["https://a.example/x", "https://b.example/x"]
+
+
+def test_replay_returns_earlier_value():
+    @chaos.tool(name="feed")
+    def feed(n):
+        return f"message {n}"
+
+    with bound(Session([faults.Replay("feed", after_calls=1)])):
+        assert [feed(1), feed(2), feed(3)] == ["message 1", "message 1", "message 2"]
+    with bound(Session([faults.Replay("feed", which="first", after_calls=1)])):
+        assert [feed(1), feed(2), feed(3)] == ["message 1", "message 1", "message 1"]
+
+
+def test_duplicate_executes_call_again():
+    calls = []
+
+    @chaos.payment(name="charge")
+    def charge(amount):
+        calls.append(amount)
+        return "ok"
+
+    session = Session([faults.Duplicate("charge", times=2)])
+    with bound(session):
+        assert charge(5) == "ok"
+    assert calls == [5, 5, 5]
+    assert sum(bool(e.data.get("duplicate")) for e in session.trace.of("payment.call")) == 2
+
+
+def test_auth_error_carries_challenge():
+    with bound(Session([faults.AuthError("lookup", status=403, scope="read")])):
+        with pytest.raises(faults.ChaosAuthError) as info:
+            lookup("a")
+    assert info.value.status == 403
+    assert info.value.www_authenticate("https://r.example/meta") == (
+        'Bearer error="insufficient_scope", error_description="additional scope required (injected)", '
+        'scope="read", resource_metadata="https://r.example/meta"'
+    )

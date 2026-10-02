@@ -19,7 +19,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from agentic_chaos.faults import Override
+from agentic_chaos.faults import Override, Repeat
 from agentic_chaos.runtime import intercept, record
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -43,10 +43,18 @@ def _instrument(kind: str, before: str | None, after: str | None) -> Callable[..
                     return str(bound.arguments[name_arg])
             return name or fn.__name__
 
-        def _before(label: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
+        def _before(label: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> int:
+            """Record the call and apply call-time faults. Returns how many extra deliveries to make."""
             record(kind, label, args=list(args), kwargs=kwargs)
             if before:
-                intercept(before, label, None, args=args, kwargs=kwargs)
+                try:
+                    intercept(before, label, None, args=args, kwargs=kwargs)
+                except Repeat as repeat:
+                    return repeat.times
+            return 0
+
+        def _duplicate(label: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
+            record(kind, label, args=list(args), kwargs=kwargs, duplicate=True)
 
         def _after(label: str, result: Any) -> Any:
             if after:
@@ -60,10 +68,14 @@ def _instrument(kind: str, before: str | None, after: str | None) -> Callable[..
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 label = _label(args, kwargs)
                 try:
-                    _before(label, args, kwargs)
+                    extra = _before(label, args, kwargs)
                 except Override as forced:
                     return _after(label, forced.value)
-                return _after(label, await fn(*args, **kwargs))
+                result = await fn(*args, **kwargs)
+                for _ in range(extra):
+                    _duplicate(label, args, kwargs)
+                    result = await fn(*args, **kwargs)
+                return _after(label, result)
 
             return async_wrapper
 
@@ -71,10 +83,14 @@ def _instrument(kind: str, before: str | None, after: str | None) -> Callable[..
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             label = _label(args, kwargs)
             try:
-                _before(label, args, kwargs)
+                extra = _before(label, args, kwargs)
             except Override as forced:
                 return _after(label, forced.value)
-            return _after(label, fn(*args, **kwargs))
+            result = fn(*args, **kwargs)
+            for _ in range(extra):
+                _duplicate(label, args, kwargs)
+                result = fn(*args, **kwargs)
+            return _after(label, result)
 
         return wrapper
 

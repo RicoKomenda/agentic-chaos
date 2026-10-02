@@ -33,6 +33,35 @@ class ChaosRateLimit(ChaosError):
         self.retry_after = retry_after
 
 
+class ChaosAuthError(ChaosError):
+    """Authentication/authorization failure (expired token, revoked consent, missing scope)."""
+
+    def __init__(
+        self, status: int = 401, error: str = "invalid_token", description: str = "", scope: str | None = None
+    ):
+        super().__init__(f"{status} {error}: {description or 'injected auth failure'}")
+        self.status = status
+        self.error = error
+        self.description = description or "injected auth failure"
+        self.scope = scope
+
+    def www_authenticate(self, resource_metadata: str | None = None) -> str:
+        """An RFC 6750 / MCP-style ``WWW-Authenticate`` header value."""
+        parts = [f'error="{self.error}"', f'error_description="{self.description}"']
+        if self.scope:
+            parts.append(f'scope="{self.scope}"')
+        if resource_metadata:
+            parts.append(f'resource_metadata="{resource_metadata}"')
+        return "Bearer " + ", ".join(parts)
+
+
+class Repeat(BaseException):
+    """Makes an instrumented call execute ``times`` extra times (duplicate / at-least-once delivery)."""
+
+    def __init__(self, times: int) -> None:
+        self.times = times
+
+
 class Override(BaseException):
     """Short-circuits an instrumented call and makes it return ``value`` instead."""
 
@@ -356,6 +385,70 @@ class TimeoutAfterCommit(Fault):
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         raise ChaosTimeout(f"{ctx.name} timed out after the operation was committed (injected)")
+
+
+class AuthError(Fault):
+    """Credentials stop working: expired or revoked token (401) or missing scope (403)."""
+
+    kind = "auth_error"
+    category = "security"
+    points = ("tool.call", "agent.call", "llm.call", "payment.call")
+    maps_to = ("ASI03",)
+
+    def __init__(
+        self, target: str = "*", *, status: int = 401, error: str | None = None, scope: str | None = None, **kw: Any
+    ) -> None:
+        super().__init__(target, **kw)
+        if status not in (401, 403):
+            raise ValueError("status must be 401 or 403")
+        self.status = status
+        self.error = error or ("invalid_token" if status == 401 else "insufficient_scope")
+        self.scope = scope
+
+    def apply(self, value: Any, ctx: InjectionContext) -> Any:
+        description = "token expired (injected)" if self.status == 401 else "additional scope required (injected)"
+        raise ChaosAuthError(self.status, self.error, description, self.scope)
+
+
+class Replay(Fault):
+    """Return an earlier response instead of the current one: replayed, stale or reordered messages.
+
+    ``which: previous`` returns the last earlier value (with consecutive messages this models
+    reordering), ``which: first`` the oldest one (replay of the first message). Needs at least one
+    earlier value for the same point and target, e.g. ``after_calls: 1``.
+    """
+
+    kind = "replay"
+    category = "security"
+    points = ("agent.message", "tool.result", "memory.read", "resource.read", "llm.response", "payment.result")
+    maps_to = ("ASI07",)
+
+    def __init__(self, target: str = "*", *, which: str = "previous", **kw: Any) -> None:
+        super().__init__(target, **kw)
+        if which not in ("previous", "first"):
+            raise ValueError("which must be previous or first")
+        self.which = which
+
+    def apply(self, value: Any, ctx: InjectionContext) -> Any:
+        if not ctx.previous:
+            return value
+        return copy.deepcopy(ctx.previous[0] if self.which == "first" else ctx.previous[-1])
+
+
+class Duplicate(Fault):
+    """Deliver a request more than once (at-least-once delivery, replayed task or payment mandate)."""
+
+    kind = "duplicate"
+    category = "security"
+    points = ("tool.call", "agent.call", "payment.call")
+    maps_to = ("ASI07", "ASI08")
+
+    def __init__(self, target: str = "*", *, times: int = 1, **kw: Any) -> None:
+        super().__init__(target, **kw)
+        self.times = times
+
+    def apply(self, value: Any, ctx: InjectionContext) -> Any:
+        raise Repeat(self.times)
 
 
 # --- MCP protocol faults (used by agentic_chaos.mcp.proxy) --------------------------------
