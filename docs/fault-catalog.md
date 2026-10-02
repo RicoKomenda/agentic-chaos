@@ -44,6 +44,9 @@
 | `mcp_sampling` | security | mcp.server_request | server asks the client's model to complete an injected prompt |
 | `mcp_elicitation` | security | mcp.server_request | server phishes the user for a secret via elicitation |
 | `mcp_list_changed_flood` | reliability | mcp.server_request | storm of `tools/list_changed` notifications |
+| `auth_error` | security | tool.call, agent.call, llm.call, payment.call | expired/revoked token (401) or missing scope (403); HTTP transports send a `WWW-Authenticate` challenge |
+| `replay` | security | agent.message, tool.result, memory.read, resource.read, llm.response, payment.result | an earlier response is returned again (stale, replayed or reordered; `which`: previous/first) |
+| `duplicate` | security | tool.call, agent.call, payment.call | the same request is delivered `times` extra times (at-least-once delivery, replayed task or mandate) |
 
 Built-in payloads for injection faults: `exfiltrate`, `goal_hijack`, `authority`, `tool_poisoning`, `sampling_exfil`,
 `upsell`, `delegate_back`, or any custom string with `{canary}` and `{sink}` placeholders.
@@ -56,15 +59,15 @@ References: OWASP Top 10 for Agentic Applications (ASI01-ASI10) and OWASP Top 10
 | --- | --- | --- |
 | ASI01 Agent Goal Hijack | available | `inject_instruction`, `asi01-indirect-prompt-injection`, `asi01-goal-hijack` |
 | ASI02 Tool Misuse and Exploitation | available | `inject_instruction` with `sink`, `poison_tool_description` |
-| ASI03 Identity and Privilege Abuse | partial | `force_verdict` on authz controls, `control-defense-in-depth` |
+| ASI03 Identity and Privilege Abuse | available | `auth_error`, `force_verdict` on authz controls, `control-defense-in-depth`, `multi-agent/expired-credentials`, `mcp/expired-token` |
 | ASI04 Agentic Supply Chain Vulnerabilities | available | `poison_tool_description`, `shadow_tool`, `spoof_agent_card`, `experiments/mcp/rug-pull`, `experiments/ap2/extension-downgrade` |
 | ASI05 Unexpected Code Execution | planned | sandbox escape canaries for code tools |
 | ASI06 Memory and Context Poisoning | available | `poison_memory`, `asi06-memory-poisoning` |
-| ASI07 Insecure Inter-Agent Communication | available | `spoof_agent_card`, `inject_instruction`/`patch` on `agent.message`, `experiments/multi-agent/`; planned: replay |
+| ASI07 Insecure Inter-Agent Communication | available | `spoof_agent_card`, `inject_instruction`/`patch` on `agent.message`, `replay`, `duplicate`, `experiments/multi-agent/`, `ap2/mandate-replay` |
 | ASI08 Cascading Failures | available | `timeout`, `error`, `rate_limit`, `latency`, `control_outage`, `timeout_after_commit`, delegation loops, `blast_radius` |
 | ASI09 Human-Agent Trust Exploitation | partial | `mcp_elicitation` (credential phishing); planned: approval fatigue at an `approval` control |
 | ASI10 Rogue Agents | planned | goal-drift probes across long sessions |
-| LLM01 Prompt Injection | available | `inject_instruction`, `poison_memory`, `poison_tool_description` |
+| LLM01 Prompt Injection | available | `inject_instruction`, `poison_memory`, `poison_tool_description`, `flood` (`asi01-context-flood`) |
 | LLM05 Improper Output Handling | partial | `corrupt_json`, `truncate` |
 | LLM08 Vector and Embedding Weaknesses | partial | `poison_memory` |
 | LLM10 Unbounded Consumption | available | `rate_limit`, `max_tool_calls`, `max_llm_calls` |

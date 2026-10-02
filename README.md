@@ -67,10 +67,12 @@ uv run agentic-chaos run experiments/mcp                        # MCP: rug pull,
 uv run agentic-chaos run experiments/multi-agent experiments/ap2 # A2A card spoofing, delegation loops, AP2 mandates, ...
 ```
 
-To put any real MCP server under chaos for any client (Claude Code, IDEs, agent frameworks), use the proxy:
+To put any real MCP server under chaos for any client (Claude Code, IDEs, agent frameworks), use the proxy, over stdio
+or Streamable HTTP:
 
 ```bash
 agentic-chaos mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml -- npx -y @modelcontextprotocol/server-everything
+agentic-chaos mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml --upstream https://mcp.example.com/mcp
 ```
 
 See [docs/protocols.md](docs/protocols.md).
@@ -164,8 +166,8 @@ a canary in a tool argument or the final output, never as real harm.
 | Category | Faults |
 | --- | --- |
 | Reliability | `latency`, `timeout`, `error`, `rate_limit`, `empty`, `truncate`, `corrupt_json`, `timeout_after_commit` |
-| Security | `inject_instruction`, `poison_tool_description`, `poison_memory`, `flood`, `patch`, `control_outage`, `force_verdict` |
-| Agents / A2A | `spoof_agent_card` (plus `inject_instruction`, `patch`, `timeout` on `agent.*`) |
+| Security | `inject_instruction`, `poison_tool_description`, `poison_memory`, `flood`, `patch`, `control_outage`, `force_verdict`, `auth_error` |
+| Agents / A2A | `spoof_agent_card`, `replay`, `duplicate` (plus `inject_instruction`, `patch`, `timeout` on `agent.*`) |
 | MCP | `shadow_tool`, `mcp_sampling`, `mcp_elicitation`, `mcp_list_changed_flood` |
 
 **Probes** (`agentic-chaos probes`):
@@ -180,8 +182,8 @@ a canary in a tool argument or the final output, never as real harm.
 
 Plus `probes.custom(...)` for anything else.
 
-**Integrations**: `httpx` transports for model providers (`integrations.httpx`) and A2A (`integrations.a2a`), and the MCP
-chaos proxy (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`).
+**Integrations**: `httpx` transports for model providers (`integrations.httpx`) and A2A including streaming
+(`integrations.a2a`), and the MCP chaos proxy for stdio and Streamable HTTP (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`).
 
 **Experiment catalog** ([`experiments/`](experiments)): ready-made experiments for single agents, MCP, multi-agent
 systems and AP2, mapped to the OWASP Top 10 for Agentic Applications (ASI01-ASI10), the OWASP Top 10 for LLM

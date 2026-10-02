@@ -19,7 +19,7 @@ uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target exampl
 
 ### Stand-alone proxy (any client, any server)
 
-Put the proxy in front of a server in your client's MCP configuration. The client and the server need no changes:
+**stdio servers.** Put the proxy in front of the server in your client's MCP configuration. The client and the server need no changes:
 
 ```json
 {
@@ -32,6 +32,20 @@ Put the proxy in front of a server in your client's MCP configuration. The clien
   }
 }
 ```
+
+**Streamable HTTP servers.** Run the proxy locally and point the client at it instead of the server:
+
+```bash
+agentic-chaos mcp-proxy --faults experiments/mcp/proxy/malicious-server.yaml \
+  --upstream https://mcp.example.com/mcp --listen 127.0.0.1:8765
+# client now uses http://127.0.0.1:8765/mcp ; Ctrl-C prints probe results
+```
+
+JSON and SSE responses are supported. Injected server requests (sampling, elicitation, notifications) arrive on an
+SSE stream for the request in flight, and the client's answers (separate `POST`s) are recorded, not forwarded.
+`auth_error` faults return real `401`/`403` responses with an RFC 6750 `WWW-Authenticate` challenge that includes
+`resource_metadata`, which exercises the client's OAuth handling (token refresh, step-up scopes, re-consent).
+`GET` listen streams and `DELETE` pass through unchanged.
 
 The proxy config is a `kind: McpProxy` file containing faults and the probes to evaluate when the session ends.
 Results go to stderr and, with `--trace`, to a JSON file together with the full trace:
@@ -67,7 +81,7 @@ See `examples/mcp_demo/host.py` for a complete host that answers server-initiate
 | --- | --- | --- |
 | `tools/list` result, per tool | `tool.describe` (tool name) | `poison_tool_description` (+ `after_calls` = rug pull) |
 | `tools/list` result, whole list | `mcp.tools` | `shadow_tool` |
-| `tools/call` request | `tool.call` (tool name) | `timeout`, `error`, `rate_limit`, `latency` |
+| `tools/call` request | `tool.call` (tool name) | `timeout`, `error`, `rate_limit`, `latency`, `auth_error` (HTTP: 401/403, stdio: tool error), `duplicate` (delivered twice, client sees one answer) |
 | during a `tools/call` | `mcp.server_request` (tool name) | `mcp_sampling`, `mcp_elicitation`, `mcp_list_changed_flood` |
 | `tools/call` result | `tool.result` (tool name) | `inject_instruction`, `flood`, `truncate`, `empty`, `timeout_after_commit` |
 | `resources/read` result | `resource.read` (URI) | `inject_instruction`, `flood` |
@@ -78,7 +92,6 @@ requires. Clients that wrongly accept unsolicited requests are a separate test.
 MCP-specific probes: `no_call_after_tool_change`, `elicitation_not_accepted`, `max_events` (e.g. `mcp.request` /
 `tools/list`). `canary_not_leaked` also inspects what the client sends back in sampling and elicitation responses.
 
-Not yet covered: the Streamable HTTP transport, and OAuth failures (401/403, token expiry).
 
 ## Multi-agent systems and A2A
 
@@ -102,11 +115,13 @@ http_client = httpx.AsyncClient(transport=AsyncA2AChaosTransport())
 ```
 
 It maps `/.well-known/agent-card.json` to `agent.discover`, JSON-RPC `message/*` and `tasks/*` to `agent.call`, and
-text parts in results to `agent.message` (target name = host). Streaming (SSE) responses currently pass through
-unchanged.
+text parts in results to `agent.message` (target name = host). Streaming responses (`message/stream`,
+`tasks/resubscribe`) are transformed event by event while they stream; compressed streams pass through unchanged.
+`auth_error` becomes `401`/`403` with a `WWW-Authenticate` challenge, and `duplicate` delivers the same task more than once.
 
 Faults: `spoof_agent_card` / `patch` (forged or tampered cards), `inject_instruction` on `agent.message` (including the
-`delegate_back` payload for delegation loops), `timeout` / `error` on `agent.call`.
+`delegate_back` payload for delegation loops), `replay` (stale, replayed or reordered replies), `duplicate`
+(at-least-once delivery), `auth_error` (expired or revoked credentials), `timeout` / `error` on `agent.call`.
 Probes: `agent_not_contacted`, `max_agent_calls`, `blast_radius` (how many downstream agents, tools or payment
 services a planted canary reached).
 
@@ -133,7 +148,7 @@ ap2.record_settlement(mandate_id, amount)   # where you observe real charges (pr
 | `max_settlements` | no duplicate charges (non-idempotent retries) |
 | `payment_requires_extension` | no payment after discovering an agent that lacks the required AP2 extension |
 
-Instrument payment steps with `@chaos.payment` (points `payment.call`, `payment.result`) to inject processor outages
-and `timeout_after_commit` (the charge succeeded, but the agent sees a timeout).
+Instrument payment steps with `@chaos.payment` (points `payment.call`, `payment.result`) to inject processor outages,
+`timeout_after_commit` (the charge succeeded, but the agent sees a timeout) and `duplicate` (a replayed Payment Mandate).
 
 The demo uses made-up merchants, prices and extension URIs. It never touches a real payment system.

@@ -10,7 +10,7 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 - [x] YAML experiment format and CLI with CI-friendly exit codes
 - [x] `httpx` transport for provider-level faults (OpenAI, Anthropic, LiteLLM, ...)
 - [x] Inter-agent points (`agent.discover`, `agent.call`, `agent.message`): card spoofing, injection, delegation loops (ASI07)
-- [ ] Message replay and reordering faults; streaming (SSE) support in the A2A transport
+- [x] Message replay / reordering (`replay`) and duplicate delivery (`duplicate`); streaming (SSE) in the A2A transport
 - [x] Payment points and AP2 probes (intent, review, duplicate charges, extension downgrade)
 - [ ] Human-approval control helpers: approval fatigue, misleading summaries (ASI09)
 - [ ] Multi-turn experiments and long-session goal-drift probes (ASI10)
@@ -22,7 +22,7 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 
 - [x] **MCP chaos proxy** (stdio): poisoned descriptions, rug pull, tool shadowing, sampling and elicitation abuse,
       `list_changed` floods, timeouts, oversized results
-- [ ] MCP proxy: Streamable HTTP transport, OAuth failures (401/403, token expiry)
+- [x] MCP proxy: Streamable HTTP transport; `auth_error` (401/403 with `WWW-Authenticate`) across MCP, A2A and providers
 - [x] A2A `httpx` transport (Agent Card discovery, `message/*`, `tasks/*`)
 - [ ] Framework adapters: LangGraph / LangChain, OpenAI Agents SDK, Anthropic Agent SDK, Pydantic AI, CrewAI, Google ADK, LlamaIndex
 - [ ] OpenTelemetry: evaluate probes over GenAI semantic-convention traces; emit chaos spans

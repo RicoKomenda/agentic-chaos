@@ -358,18 +358,18 @@ Priorities: **P1** has a high security payoff and fits the current design. **P2*
 | --- | --- | --- | --- |
 | P1 | `success_rate_at_least`, `tokens_within`, `cost_within` | probes | C2, C3, D2, A2 |
 | P1 | `force_fallback` (route to fallback model/host) + `controls_invoked` probe | fault + probe | A3, B1 |
-| P1 | ~~`context_flood` (pad then payload)~~ (done as `flood`; catalog entry open) | fault | C4, D3 |
+| P1 | ~~`context_flood` (pad then payload)~~ (done as `flood`, `asi01-context-flood`) | fault | C4, D3 |
 | P1 | ~~`timeout_after_commit` + idempotency probe~~ (done; `max_settlements` for payments) | fault + probe | D1 |
 | P1 | guardrail-DoS experiment pair (security **and** availability) | catalog | C2 |
 | P1 | approval-control catalog experiments (outage ≠ approve) | catalog | C6 |
 | P2 | `region_failover` + `region_in` probe | fault + probe | A4 |
-| P2 | `auth_error` (401/403) | fault | E2 |
+| P2 | ~~`auth_error` (401/403)~~ (done) | fault | E2 |
 | P2 | `stream_cut`, `rechunk` for SSE | faults | A7, C5 |
 | P2 | `agent.message` point: inject, spoof, delay, drop + blast-radius probe | point | D4 |
 | P2 | MCP chaos proxy (rug pull, poisoning, auth errors on the wire) | integration | E1, E2 |
 | P2 | `model_swap` | fault | A5 |
-| P1 | ~~MCP chaos proxy: rug pull, shadowing, sampling/elicitation abuse~~ (done; auth errors open) | integration | E1, E2, I1 |
-| P2 | ~~`agent.message` / `agent.discover` points + A2A adapter (card spoofing, delegation loops)~~ (done; replay open) | points + integration | D4, H, I2 |
+| P1 | ~~MCP chaos proxy (stdio + Streamable HTTP): rug pull, shadowing, sampling/elicitation abuse, auth errors~~ (done) | integration | E1, E2, I1 |
+| P2 | ~~`agent.message` / `agent.discover` points + A2A adapter (card spoofing, delegation loops, replay, streaming)~~ (done) | points + integration | D4, H, I2 |
 | P2 | ~~`payment` points + AP2 reference shopping target + intent/review/settlement probes~~ (done) | point + target + probe | I3 |
 | P2 | MAST / Microsoft taxonomy tags on faults and experiments (MAST tags started) | catalog | H |
 | P3 | `cache.read` point + `poison_cache` | point + fault | B4 |
