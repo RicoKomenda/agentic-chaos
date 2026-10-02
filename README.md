@@ -1,6 +1,10 @@
-# Agentic Chaos
+<p align="center">
+  <img src="docs/assets/logo.png" alt="Agentic Chaos logo" width="320">
+</p>
 
-**Security chaos engineering for AI agents and LLM applications.**
+<h1 align="center">Agentic Chaos</h1>
+
+<p align="center"><strong>Security chaos engineering for AI agents and LLM applications.</strong></p>
 
 Your agent works in the demo. Then a tool times out, a provider returns 429s, a web page carries a
 hidden instruction, an MCP server ships a poisoned tool description, and your guardrail service is
