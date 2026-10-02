@@ -5,14 +5,14 @@ three protocol layers. Each maps onto the same injection points, faults and prob
 
 | Layer | How chaos gets in | Demo target | Catalog |
 | --- | --- | --- | --- |
-| Tools and data (MCP) | `McpChaosProxy`, in-process or `agentic-chaos mcp-proxy` | `examples/mcp_demo` | `experiments/mcp/` |
+| Tools and data (MCP) | `McpChaosProxy`, in-process or `agentic-chaos-security mcp-proxy` | `examples/mcp_demo` | `experiments/mcp/` |
 | Agent to agent (A2A, internal hand-offs) | `@chaos.agent`, `chaos.discover_agent()`, `A2AChaosTransport` | `examples/shopper` | `experiments/multi-agent/` |
-| Payments (AP2) | `@chaos.payment`, `agentic_chaos.ap2` recording helpers | `examples/shopper` | `experiments/ap2/` |
+| Payments (AP2) | `@chaos.payment`, `agentic_chaos_security.ap2` recording helpers | `examples/shopper` | `experiments/ap2/` |
 
 ```bash
-uv run agentic-chaos run experiments/mcp                                          # naive demo host
-uv run agentic-chaos run experiments/mcp --target examples.mcp_demo.host:hardened
-uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
+uv run agentic-chaos-security run experiments/mcp                                          # naive demo host
+uv run agentic-chaos-security run experiments/mcp --target examples.mcp_demo.host:hardened
+uv run agentic-chaos-security run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
 ```
 
 ## MCP
@@ -25,7 +25,7 @@ uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target exampl
 {
   "mcpServers": {
     "everything-under-chaos": {
-      "command": "agentic-chaos",
+      "command": "agentic-chaos-security",
       "args": ["mcp-proxy", "--faults", "experiments/mcp/proxy/rug-pull.yaml", "--trace", "chaos-trace.json",
                "--", "npx", "-y", "@modelcontextprotocol/server-everything"]
     }
@@ -36,7 +36,7 @@ uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target exampl
 **Streamable HTTP servers.** Run the proxy locally and point the client at it instead of the server:
 
 ```bash
-agentic-chaos mcp-proxy --faults experiments/mcp/proxy/malicious-server.yaml \
+agentic-chaos-security mcp-proxy --faults experiments/mcp/proxy/malicious-server.yaml \
   --upstream https://mcp.example.com/mcp --listen 127.0.0.1:8765
 # client now uses http://127.0.0.1:8765/mcp ; Ctrl-C prints probe results
 ```
@@ -66,7 +66,7 @@ spec:
 ### In-process (inside experiments)
 
 ```python
-from agentic_chaos.mcp import McpChaosProxy
+from agentic_chaos_security.mcp import McpChaosProxy
 
 async with McpChaosProxy(["python", "server.py"]) as endpoint:
     await endpoint.send({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
@@ -98,7 +98,7 @@ MCP-specific probes: `no_call_after_tool_change`, `elicitation_not_accepted`, `m
 Instrument calls to other agents and discovery of other agents:
 
 ```python
-import agentic_chaos as chaos
+import agentic_chaos_security as chaos
 
 card = chaos.discover_agent("merchant", fetched_card)      # point: agent.discover
 
@@ -109,7 +109,7 @@ def send_task(url: str, message: dict) -> dict: ...         # points: agent.call
 For real A2A clients built on `httpx`, use the transport instead of decorators:
 
 ```python
-from agentic_chaos.integrations.a2a import AsyncA2AChaosTransport
+from agentic_chaos_security.integrations.a2a import AsyncA2AChaosTransport
 
 http_client = httpx.AsyncClient(transport=AsyncA2AChaosTransport())
 ```
@@ -133,7 +133,7 @@ AP2 secures signed mandates, but the context *before* signing (catalog data, too
 signed. Report the security-relevant moments from your shopping agent, then let the probes check the invariants:
 
 ```python
-from agentic_chaos import ap2
+from agentic_chaos_security import ap2
 
 ap2.record_intent({"max_amount": 20, "merchants": ["acme-merchant"], "skus": ["usb-c-cable"]})
 ap2.record_review(cart)               # the cart the user saw and approved

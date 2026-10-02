@@ -1,7 +1,7 @@
 """The experiment file format: validation with readable errors, and a generated JSON Schema.
 
 Both are derived from the fault and probe registries (constructor and factory signatures), so they can
-never drift from the code. ``agentic-chaos validate`` and ``agentic-chaos schema`` expose them on the CLI.
+never drift from the code. The CLI commands ``validate`` and ``schema`` expose them.
 
 Format versions:
 
@@ -20,9 +20,9 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from agentic_chaos import faults as fault_lib
-from agentic_chaos import probes as probe_lib
-from agentic_chaos.runtime import POINTS
+from agentic_chaos_security import faults as fault_lib
+from agentic_chaos_security import probes as probe_lib
+from agentic_chaos_security.runtime import POINTS
 
 __all__ = [
     "API_VERSION",
@@ -344,7 +344,7 @@ def _params_schema(signature: dict[str, Param]) -> dict[str, Any]:
 
 
 def _builtin(obj: Any) -> bool:
-    return str(getattr(obj, "__module__", "")).startswith("agentic_chaos.")
+    return str(getattr(obj, "__module__", "")).startswith("agentic_chaos_security.")
 
 
 def json_schema(*, include_extensions: bool = False) -> dict[str, Any]:

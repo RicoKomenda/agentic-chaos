@@ -20,8 +20,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosTimeout, Override, Repeat
-from agentic_chaos.runtime import intercept, record
+from agentic_chaos_security.faults import ChaosAuthError, ChaosError, ChaosTimeout, Override, Repeat
+from agentic_chaos_security.runtime import intercept, record
 
 __all__ = [
     "Decision",

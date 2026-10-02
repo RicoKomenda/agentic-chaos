@@ -49,7 +49,7 @@ Two more lessons came from building the harness. Newer `sqlmodel` and `qdrant-cl
 ```bash
 git clone <dvma> ../damn-vulnerable-memory-agent      # or set DVMA_PATH
 uv sync --group interop --group case-studies
-uv run agentic-chaos run case_studies/dvma/experiments
+uv run agentic-chaos-security run case_studies/dvma/experiments
 uv run pytest tests/case_studies
 ```
 

@@ -5,6 +5,15 @@ and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versi
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-02
+
+First stable release. The public API, the `agentic-chaos/v1` experiment format, CLI commands and exit codes,
+and JSON report fields are now covered by the versioning policy.
+
+The project is named Agentic Chaos; it installs as **`agentic-chaos-security`** (import
+`agentic_chaos_security`, command `agentic-chaos-security` or `achaos`), because the PyPI name `agentic-chaos`,
+its import name and its command belong to an unrelated project.
+
 ### Added
 
 - Core: sessions, traces, seeded fault selection, sync and async instrumentation for tools, models, memory,

@@ -5,9 +5,9 @@ import sys
 import httpx
 import pytest
 
-from agentic_chaos import faults, probes
-from agentic_chaos.mcp.http import McpHttpProxy
-from agentic_chaos.runtime import Session, bound
+from agentic_chaos_security import faults, probes
+from agentic_chaos_security.mcp.http import McpHttpProxy
+from agentic_chaos_security.runtime import Session, bound
 from examples.mcp_demo.server import handle
 
 UPSTREAM = "https://mcp.example/mcp"
@@ -143,7 +143,16 @@ def test_cli_http_mode_end_to_end(tmp_path):
     trace = tmp_path / "trace.json"
     server = subprocess.Popen([sys.executable, str(root / "examples/mcp_demo/http_server.py"), str(up)])
     config = root / "experiments/mcp/proxy/rug-pull.yaml"
-    command = [sys.executable, "-m", "agentic_chaos.cli", "mcp-proxy", "--faults", str(config), "--trace", str(trace)]
+    command = [
+        sys.executable,
+        "-m",
+        "agentic_chaos_security.cli",
+        "mcp-proxy",
+        "--faults",
+        str(config),
+        "--trace",
+        str(trace),
+    ]
     command += ["--upstream", f"http://127.0.0.1:{up}/mcp", "--listen", f"127.0.0.1:{px}"]
     proxy = subprocess.Popen(command, stderr=subprocess.PIPE, text=True)
     try:

@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from agentic_chaos import faults
-from agentic_chaos.runtime import Session, bound
+from agentic_chaos_security import faults
+from agentic_chaos_security.runtime import Session, bound
 
 pytestmark = pytest.mark.interop
 PAGE = "Quarterly results are up 4%."
@@ -39,7 +39,7 @@ def test_langchain_tool_and_langgraph_tool_node():
     pytest.importorskip("langgraph.prebuilt")
     from langchain_core.tools import tool
 
-    from agentic_chaos.integrations.langchain import instrument_tools
+    from agentic_chaos_security.integrations.langchain import instrument_tools
 
     (lc_tool,) = instrument_tools([tool(fetch_page)])
     session = Session([faults.Truncate("fetch_page", keep=0.5)])
@@ -56,7 +56,7 @@ def test_langgraph_surfaces_tool_timeouts_to_the_model():
     pytest.importorskip("langgraph.prebuilt")
     from langchain_core.tools import tool
 
-    from agentic_chaos.integrations.langchain import instrument_tools
+    from agentic_chaos_security.integrations.langchain import instrument_tools
 
     call = {"name": "fetch_page", "args": {"url": "x"}, "id": "1", "type": "tool_call"}
     with bound(Session([faults.Timeout("fetch_page")])):
@@ -75,7 +75,7 @@ def test_openai_agents_function_tool():
     agents = pytest.importorskip("agents")
     from agents.tool_context import ToolContext
 
-    from agentic_chaos.integrations.openai_agents import instrument_tools
+    from agentic_chaos_security.integrations.openai_agents import instrument_tools
 
     (instrumented,) = instrument_tools([agents.function_tool(fetch_page)])
     arguments = json.dumps({"url": "https://example.com"})
@@ -94,7 +94,7 @@ def test_pydantic_ai_agent_with_test_model():
     pydantic_ai = pytest.importorskip("pydantic_ai")
     from pydantic_ai.models.test import TestModel
 
-    from agentic_chaos.integrations.pydantic_ai import instrument_tool
+    from agentic_chaos_security.integrations.pydantic_ai import instrument_tool
 
     agent = pydantic_ai.Agent(TestModel(), tools=[instrument_tool(fetch_page)])
     session = Session([faults.Truncate("fetch_page", keep=0.5)])

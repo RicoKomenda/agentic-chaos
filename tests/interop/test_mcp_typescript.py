@@ -26,7 +26,7 @@ def test_typescript_reference_server_through_proxy(mode, tmp_path):
         encoding="utf-8",
     )
     trace = tmp_path / "trace.json"
-    args = ["-m", "agentic_chaos.cli", "mcp-proxy", "--faults", str(config), "--trace", str(trace)]
+    args = ["-m", "agentic_chaos_security.cli", "mcp-proxy", "--faults", str(config), "--trace", str(trace)]
     params = mcp.StdioServerParameters(command=sys.executable, args=[*args, "--", "npx", "-y", PACKAGE])
 
     async def main():

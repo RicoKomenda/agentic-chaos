@@ -1,6 +1,6 @@
 """A tiny MCP host (client + scripted "model") for MCP chaos experiments. No API key needed.
 
-The host talks to ``examples/mcp_demo/server.py`` through :class:`agentic_chaos.mcp.McpChaosProxy`.
+The host talks to ``examples/mcp_demo/server.py`` through :class:`agentic_chaos_security.mcp.McpChaosProxy`.
 Like many real models, the scripted model follows instructions it finds in its context.
 
 * ``naive``    - trusts tool definitions, auto-approves sampling, fills in elicitations,
@@ -22,8 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import agentic_chaos as chaos
-from agentic_chaos.mcp import Endpoint, McpChaosProxy
+import agentic_chaos_security as chaos
+from agentic_chaos_security.mcp import Endpoint, McpChaosProxy
 
 log = logging.getLogger("mcp_host")
 SERVER = [sys.executable, str(Path(__file__).with_name("server.py"))]

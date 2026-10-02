@@ -19,8 +19,8 @@ import inspect
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from agentic_chaos.faults import Override, Repeat
-from agentic_chaos.runtime import aintercept, intercept, record
+from agentic_chaos_security.faults import Override, Repeat
+from agentic_chaos_security.runtime import aintercept, intercept, record
 
 __all__ = [
     "agent",

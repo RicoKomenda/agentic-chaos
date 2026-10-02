@@ -11,7 +11,7 @@ its context. Three variants show how the same experiments separate weak from str
                           authorization check guards the sensitive tool,
                           and tool/LLM errors are handled gracefully
 
-Swap the scripted model for a real one (see ``agentic_chaos.integrations.httpx``) to run the same
+Swap the scripted model for a real one (see ``agentic_chaos_security.integrations.httpx``) to run the same
 experiments against production-like behaviour.
 """
 
@@ -21,7 +21,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
-import agentic_chaos as chaos
+import agentic_chaos_security as chaos
 
 log = logging.getLogger("mailbot")
 

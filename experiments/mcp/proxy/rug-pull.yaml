@@ -1,5 +1,5 @@
 # Stand-alone proxy config: put the proxy in front of any MCP server used by any client, e.g. in .mcp.json:
-#   "command": "agentic-chaos",
+#   "command": "agentic-chaos-security",
 #   "args": ["mcp-proxy", "--faults", "experiments/mcp/proxy/rug-pull.yaml", "--trace", "chaos-trace.json",
 #            "--", "npx", "-y", "@modelcontextprotocol/server-everything"]
 apiVersion: agentic-chaos/v1

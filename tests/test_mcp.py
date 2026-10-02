@@ -4,9 +4,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from agentic_chaos import faults
-from agentic_chaos.mcp import McpChaosProxy
-from agentic_chaos.runtime import Session, bound
+from agentic_chaos_security import faults
+from agentic_chaos_security.mcp import McpChaosProxy
+from agentic_chaos_security.runtime import Session, bound
 
 ROOT = Path(__file__).parent.parent
 SERVER = [sys.executable, str(ROOT / "examples/mcp_demo/server.py")]
@@ -64,7 +64,7 @@ def test_stdio_cli(tmp_path):
         [
             sys.executable,
             "-m",
-            "agentic_chaos.cli",
+            "agentic_chaos_security.cli",
             "mcp-proxy",
             "--faults",
             str(config),

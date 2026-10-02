@@ -16,11 +16,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from agentic_chaos.faults import Fault
-from agentic_chaos.probes import Probe, ProbeResult
-from agentic_chaos.redact import Redactor, redact
-from agentic_chaos.runtime import Session, Trace, bound
-from agentic_chaos.stats import runs_needed, wilson_interval
+from agentic_chaos_security.faults import Fault
+from agentic_chaos_security.probes import Probe, ProbeResult
+from agentic_chaos_security.redact import Redactor, redact
+from agentic_chaos_security.runtime import Session, Trace, bound
+from agentic_chaos_security.stats import runs_needed, wilson_interval
 
 __all__ = [
     "Experiment",
@@ -143,7 +143,10 @@ class ExperimentResult:
         return self._rate(self.chaos)
 
     def to_dict(self, include_traces: bool = False, *, redactor: Redactor | None | bool = True) -> dict[str, Any]:
-        """A JSON-ready report. Secrets are redacted unless ``redactor=False`` (see :mod:`agentic_chaos.redact`)."""
+        """A JSON-ready report. Secrets are redacted unless ``redactor=False``.
+
+        See :mod:`agentic_chaos_security.redact`.
+        """
         report = self._report(include_traces)
         if redactor is False:
             return report

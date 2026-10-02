@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-import agentic_chaos as chaos
-from agentic_chaos import Experiment, Verdict, faults, probes
-from agentic_chaos.runtime import Session, bound
+import agentic_chaos_security as chaos
+from agentic_chaos_security import Experiment, Verdict, faults, probes
+from agentic_chaos_security.runtime import Session, bound
 
 
 @chaos.tool
@@ -184,7 +184,7 @@ def test_latency_does_not_block_the_event_loop_in_async_code():
 
 
 def test_kill_switch(monkeypatch, tmp_path):
-    from agentic_chaos import runtime
+    from agentic_chaos_security import runtime
 
     session = Session([faults.Timeout("lookup")])
     monkeypatch.setenv(runtime.DISABLE_ENV, "1")

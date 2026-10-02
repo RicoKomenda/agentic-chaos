@@ -1,6 +1,6 @@
 """A target module that registers its own probe, as extensions do."""
 
-from agentic_chaos.probes import PROBES, ProbeResult
+from agentic_chaos_security.probes import PROBES, ProbeResult
 
 
 def always_fine():

@@ -15,8 +15,9 @@ controlled, reproducible faults - both **accidents** (outages, latency, malforme
 **adversaries** (prompt injection, tool and memory poisoning, failing security controls) - and checks
 that your security and resilience invariants still hold.
 
-> Status: pre-release (`v0.1.0.dev0`). The experiment format (`agentic-chaos/v1`) and the public API
-> ([docs/api.md](docs/api.md)) follow the [versioning policy](docs/versioning.md).
+> Status: 1.0. The experiment format (`agentic-chaos/v1`) and the public API ([docs/api.md](docs/api.md))
+> follow the [versioning policy](docs/versioning.md). Installs as `agentic-chaos-security`
+> (`import agentic_chaos_security`, command `agentic-chaos-security` or `achaos`).
 
 ## Why another chaos tool?
 
@@ -34,9 +35,12 @@ that never fires - these are found by experiment, not by review.
 ## Quick start
 
 ```bash
+pip install agentic-chaos-security        # the library, the CLI (agentic-chaos-security, alias achaos)
+
+# or, to run the catalog against the demo agents:
 git clone https://github.com/RicoKomenda/agentic-chaos.git && cd agentic-chaos
-uv sync                      # or: pip install -e .
-uv run agentic-chaos run experiments/*.yaml
+uv sync
+uv run agentic-chaos-security run experiments/*.yaml
 ```
 
 The catalog targets a small built-in demo agent (`examples/mailbot`) that needs no API key. Against the
@@ -54,7 +58,7 @@ guardrail-outage-fails-closed: WEAKNESS-FOUND
 Run the same catalog against the hardened variant, and every experiment holds:
 
 ```bash
-uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened
+uv run agentic-chaos-security run experiments/*.yaml --target examples.mailbot.agent:hardened
 ```
 
 Exit codes are CI-friendly: `0` all hypotheses held, `1` weakness found, `2` inconclusive.
@@ -64,16 +68,16 @@ Exit codes are CI-friendly: `0` all hypotheses held, `1` weakness found, `2` inc
 The same approach works at the protocol level, with offline demo targets for each layer:
 
 ```bash
-uv run agentic-chaos run experiments/mcp                        # MCP: rug pull, tool shadowing, sampling, elicitation, ...
-uv run agentic-chaos run experiments/multi-agent experiments/ap2 # A2A card spoofing, delegation loops, AP2 mandates, ...
+uv run agentic-chaos-security run experiments/mcp                        # MCP: rug pull, tool shadowing, sampling, elicitation, ...
+uv run agentic-chaos-security run experiments/multi-agent experiments/ap2 # A2A card spoofing, delegation loops, AP2 mandates, ...
 ```
 
 To put any real MCP server under chaos for any client (Claude Code, IDEs, agent frameworks), use the proxy, over stdio
 or Streamable HTTP:
 
 ```bash
-agentic-chaos mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml -- npx -y @modelcontextprotocol/server-everything
-agentic-chaos mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml --upstream https://mcp.example.com/mcp
+agentic-chaos-security mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml -- npx -y @modelcontextprotocol/server-everything
+agentic-chaos-security mcp-proxy --faults experiments/mcp/proxy/rug-pull.yaml --upstream https://mcp.example.com/mcp
 ```
 
 See [docs/protocols.md](docs/protocols.md).
@@ -83,7 +87,7 @@ See [docs/protocols.md](docs/protocols.md).
 1. **Instrument** the seams of your application. Decorators are no-ops outside an experiment, so they can stay in production code.
 
    ```python
-   import agentic_chaos as chaos
+   import agentic_chaos_security as chaos
 
    @chaos.tool
    def fetch_page(url: str) -> str: ...
@@ -100,7 +104,7 @@ See [docs/protocols.md](docs/protocols.md).
    For model calls, use `@chaos.llm`, or wrap any SDK that accepts an `httpx` client:
 
    ```python
-   from agentic_chaos.integrations.httpx import ChaosTransport
+   from agentic_chaos_security.integrations.httpx import ChaosTransport
    client = anthropic.Anthropic(http_client=httpx.Client(transport=ChaosTransport()))
    ```
 
@@ -136,7 +140,7 @@ See [docs/protocols.md](docs/protocols.md).
    Or in Python:
 
    ```python
-   from agentic_chaos import Experiment, faults, probes
+   from agentic_chaos_security import Experiment, faults, probes
 
    result = Experiment(
        name="guardrail-outage-fails-closed",
@@ -162,7 +166,7 @@ a canary in a tool argument or the final output, never as real harm.
 `resource.read`, `control`, `agent.discover`, `agent.call`, `agent.message`, `payment.call`, `payment.result`,
 `mcp.tools`, `mcp.server_request`.
 
-**Faults** (`agentic-chaos faults`):
+**Faults** (`agentic-chaos-security faults`):
 
 | Category | Faults |
 | --- | --- |
@@ -171,7 +175,7 @@ a canary in a tool argument or the final output, never as real harm.
 | Agents / A2A | `spoof_agent_card`, `replay`, `duplicate` (plus `inject_instruction`, `patch`, `timeout` on `agent.*`) |
 | MCP | `shadow_tool`, `mcp_sampling`, `mcp_elicitation`, `mcp_list_changed_flood` |
 
-**Probes** (`agentic-chaos probes`):
+**Probes** (`agentic-chaos-security probes`):
 
 | Area | Probes |
 | --- | --- |
@@ -187,7 +191,7 @@ Plus `probes.custom(...)` for anything else.
 
 **Integrations**: transports for model providers and A2A, for `httpx` (`integrations.httpx`, `integrations.a2a`)
 and `httpx2` (`integrations.httpx2`, used by current OpenAI and Anthropic SDKs), including streaming; and the MCP chaos
-proxy for stdio and Streamable HTTP, both protocol eras (`agentic_chaos.mcp`, `agentic-chaos mcp-proxy`). Tested against
+proxy for stdio and Streamable HTTP, both protocol eras (`agentic_chaos_security.mcp`, `agentic-chaos-security mcp-proxy`). Tested against
 the official MCP, A2A, OpenAI and Anthropic SDKs - see [docs/interop.md](docs/interop.md).
 
 **Experiment catalog** ([`experiments/`](experiments)): ready-made experiments for single agents, MCP, multi-agent

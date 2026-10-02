@@ -8,7 +8,7 @@ pytest.importorskip("sqlmodel")
 pytest.importorskip("qdrant_client")
 pytest.importorskip("openai")
 
-from agentic_chaos import Verdict, loader  # noqa: E402
+from agentic_chaos_security import Verdict, loader  # noqa: E402
 from case_studies.dvma import harness  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not harness.available(), reason="DVMA checkout not found (set DVMA_PATH)")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_chaos import Verdict, loader
+from agentic_chaos_security import Verdict, loader
 
 CATALOG = Path(__file__).parent.parent / "experiments"
 W, H, U = Verdict.WEAKNESS, Verdict.HELD, Verdict.INCONCLUSIVE  # U = undecided

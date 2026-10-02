@@ -1,6 +1,6 @@
 """Pydantic AI adapter: put tools under chaos.
 
-    from agentic_chaos.integrations.pydantic_ai import instrument_tool
+    from agentic_chaos_security.integrations.pydantic_ai import instrument_tool
     agent = Agent(model, tools=[instrument_tool(Tool(search)), instrument_tool(send_email)])
 
 Plain functions can also be decorated directly with ``@chaos.tool`` below ``@agent.tool_plain``: the
@@ -18,7 +18,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("pydantic-ai is not installed") from exc
 
-from agentic_chaos.inject import tool as instrument
+from agentic_chaos_security.inject import tool as instrument
 
 __all__ = ["instrument_tool"]
 

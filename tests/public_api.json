@@ -1,5 +1,5 @@
 {
-  "agentic_chaos": [
+  "agentic_chaos_security": [
     "Experiment",
     "ExperimentResult",
     "ProbeStats",
@@ -19,7 +19,7 @@
     "suspended",
     "tool"
   ],
-  "agentic_chaos.ap2": [
+  "agentic_chaos_security.ap2": [
     "cart_hash",
     "cart_matches_reviewed",
     "cart_within_intent",
@@ -30,17 +30,17 @@
     "record_review",
     "record_settlement"
   ],
-  "agentic_chaos.cli": [
+  "agentic_chaos_security.cli": [
     "main"
   ],
-  "agentic_chaos.experiment": [
+  "agentic_chaos_security.experiment": [
     "Experiment",
     "ExperimentResult",
     "ProbeStats",
     "RunResult",
     "Verdict"
   ],
-  "agentic_chaos.faults": [
+  "agentic_chaos_security.faults": [
     "AuthError",
     "ChaosAuthError",
     "ChaosError",
@@ -74,7 +74,7 @@
     "Truncate",
     "build"
   ],
-  "agentic_chaos.inject": [
+  "agentic_chaos_security.inject": [
     "agent",
     "control",
     "describe_tool",
@@ -85,29 +85,29 @@
     "payment",
     "tool"
   ],
-  "agentic_chaos.integrations.a2a": [
+  "agentic_chaos_security.integrations.a2a": [
     "A2AChaosTransport",
     "AsyncA2AChaosTransport",
     "V1_METHODS",
     "build"
   ],
-  "agentic_chaos.integrations.httpx": [
+  "agentic_chaos_security.integrations.httpx": [
     "AsyncChaosTransport",
     "ChaosTransport",
     "build",
     "map_text"
   ],
-  "agentic_chaos.integrations.httpx2": [
+  "agentic_chaos_security.integrations.httpx2": [
     "A2AChaosTransport",
     "AsyncA2AChaosTransport",
     "AsyncChaosTransport",
     "ChaosTransport"
   ],
-  "agentic_chaos.judges": [
+  "agentic_chaos_security.judges": [
     "OpenAICompatibleJudge",
     "parse_verdict"
   ],
-  "agentic_chaos.loader": [
+  "agentic_chaos_security.loader": [
     "API_VERSION",
     "ValidationError",
     "expand",
@@ -117,31 +117,31 @@
     "read",
     "resolve"
   ],
-  "agentic_chaos.mcp": [
+  "agentic_chaos_security.mcp": [
     "Endpoint",
     "McpChaosProxy",
     "StdioEndpoint"
   ],
-  "agentic_chaos.mcp.core": [
+  "agentic_chaos_security.mcp.core": [
     "Decision",
     "McpChaosCore"
   ],
-  "agentic_chaos.mcp.http": [
+  "agentic_chaos_security.mcp.http": [
     "Limits",
     "McpHttpProxy"
   ],
-  "agentic_chaos.mcp.proxy": [
+  "agentic_chaos_security.mcp.proxy": [
     "Endpoint",
     "McpChaosProxy",
     "StdioEndpoint"
   ],
-  "agentic_chaos.payloads": [
+  "agentic_chaos_security.payloads": [
     "PAYLOADS",
     "SINK_ADDRESS",
     "new_canary",
     "render"
   ],
-  "agentic_chaos.probes": [
+  "agentic_chaos_security.probes": [
     "PROBES",
     "Probe",
     "ProbeResult",
@@ -172,38 +172,38 @@
     "tool_called",
     "tool_not_called"
   ],
-  "agentic_chaos.redact": [
+  "agentic_chaos_security.redact": [
     "DEFAULT_KEY_PATTERN",
     "DEFAULT_PATTERNS",
     "REDACTED",
     "Redactor",
     "redact"
   ],
-  "agentic_chaos.report": [
+  "agentic_chaos_security.report": [
     "to_html",
     "to_junit",
     "to_markdown"
   ],
-  "agentic_chaos.pytest_plugin": [
+  "agentic_chaos_security.pytest_plugin": [
     "ChaosFixture",
     "ChaosHypothesisFailed"
   ],
-  "agentic_chaos.integrations.otel": [
+  "agentic_chaos_security.integrations.otel": [
     "MAX_EVENTS",
     "export"
   ],
-  "agentic_chaos.integrations.langchain": [
+  "agentic_chaos_security.integrations.langchain": [
     "instrument_tool",
     "instrument_tools"
   ],
-  "agentic_chaos.integrations.openai_agents": [
+  "agentic_chaos_security.integrations.openai_agents": [
     "instrument_tool",
     "instrument_tools"
   ],
-  "agentic_chaos.integrations.pydantic_ai": [
+  "agentic_chaos_security.integrations.pydantic_ai": [
     "instrument_tool"
   ],
-  "agentic_chaos.runtime": [
+  "agentic_chaos_security.runtime": [
     "DISABLE_ENV",
     "Event",
     "InjectionContext",
@@ -222,7 +222,7 @@
     "record",
     "suspended"
   ],
-  "agentic_chaos.schema": [
+  "agentic_chaos_security.schema": [
     "API_VERSION",
     "DEPRECATED_VERSIONS",
     "Param",
@@ -232,7 +232,7 @@
     "probe_params",
     "validate"
   ],
-  "agentic_chaos.stats": [
+  "agentic_chaos_security.stats": [
     "runs_needed",
     "wilson_interval"
   ]

@@ -7,12 +7,12 @@ import socket
 import httpx
 import pytest
 
-import agentic_chaos as chaos
-from agentic_chaos import Experiment, faults, probes, runtime
-from agentic_chaos.cli import _is_loopback, main
-from agentic_chaos.mcp.http import Limits, McpHttpProxy
-from agentic_chaos.redact import Redactor, redact
-from agentic_chaos.runtime import Session, bound
+import agentic_chaos_security as chaos
+from agentic_chaos_security import Experiment, faults, probes, runtime
+from agentic_chaos_security.cli import _is_loopback, main
+from agentic_chaos_security.mcp.http import Limits, McpHttpProxy
+from agentic_chaos_security.redact import Redactor, redact
+from agentic_chaos_security.runtime import Session, bound
 
 SECRET = "sk-live-0123456789abcdefABCDEF"
 

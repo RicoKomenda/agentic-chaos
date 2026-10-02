@@ -1,6 +1,6 @@
 """LangChain / LangGraph adapter: put LangChain tools under chaos without changing their code.
 
-    from agentic_chaos.integrations.langchain import instrument_tools
+    from agentic_chaos_security.integrations.langchain import instrument_tools
     tools = instrument_tools([search, send_email])        # then ToolNode(tools), create_agent(..., tools)
 
 Each call passes ``tool.call`` and its result ``tool.result`` (target = the tool's name). For model calls,
@@ -18,7 +18,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("langchain-core is not installed") from exc
 
-from agentic_chaos.inject import tool as instrument
+from agentic_chaos_security.inject import tool as instrument
 
 __all__ = ["instrument_tool", "instrument_tools"]
 

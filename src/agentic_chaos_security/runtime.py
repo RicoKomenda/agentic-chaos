@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 if TYPE_CHECKING:
-    from agentic_chaos.faults import Fault
+    from agentic_chaos_security.faults import Fault
 
 #: Injection points understood by the runtime. Faults declare which of these they act on.
 POINTS = (
@@ -167,7 +167,9 @@ class InjectionContext:
         self.session.trace.canaries.add(token)
 
 
-_current: contextvars.ContextVar[Session | None] = contextvars.ContextVar("agentic_chaos_session", default=None)
+_current: contextvars.ContextVar[Session | None] = contextvars.ContextVar(
+    "agentic_chaos_security_session", default=None
+)
 
 
 #: Kill switch: set this environment variable to 1/true/yes to make all instrumentation inert.

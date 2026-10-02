@@ -1,12 +1,12 @@
 """Inject faults into any SDK that accepts a custom ``httpx`` client (LiteLLM, older OpenAI/Anthropic SDKs, ...).
 
     import httpx
-    from agentic_chaos.integrations.httpx import ChaosTransport
+    from agentic_chaos_security.integrations.httpx import ChaosTransport
 
     client = SomeSDK(http_client=httpx.Client(transport=ChaosTransport()))
 
 SDKs built on ``httpx2`` (current OpenAI and Anthropic SDKs, MCP SDK 2.x) use the same transports from
-:mod:`agentic_chaos.integrations.httpx2`.
+:mod:`agentic_chaos_security.integrations.httpx2`.
 
 Requests pass through the ``llm.call`` point; the target name is the request host (e.g.
 ``api.anthropic.com``). Raised chaos errors are translated into what a provider failure looks like on
@@ -28,9 +28,9 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
 
-from agentic_chaos import _sse as sse
-from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Redirect, Repeat
-from agentic_chaos.runtime import intercept, record
+from agentic_chaos_security import _sse as sse
+from agentic_chaos_security.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Redirect, Repeat
+from agentic_chaos_security.runtime import intercept, record
 
 __all__ = [
     "AsyncChaosTransport",
@@ -226,7 +226,7 @@ def build(http: ModuleType) -> tuple[type, type]:
 
 try:
     import httpx as _httpx
-except ImportError:  # pragma: no cover - httpx2-only environments use agentic_chaos.integrations.httpx2
+except ImportError:  # pragma: no cover - httpx2-only environments use agentic_chaos_security.integrations.httpx2
     pass
 else:
     ChaosTransport, AsyncChaosTransport = build(_httpx)

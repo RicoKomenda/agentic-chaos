@@ -1,4 +1,4 @@
-"""pytest integration (registered automatically when agentic-chaos is installed).
+"""pytest integration (registered automatically when agentic-chaos-security is installed).
 
 Nothing changes unless you use it:
 
@@ -27,8 +27,8 @@ from typing import Any
 
 import pytest
 
-from agentic_chaos import loader
-from agentic_chaos.experiment import Experiment, ExperimentResult, Verdict
+from agentic_chaos_security import loader
+from agentic_chaos_security.experiment import Experiment, ExperimentResult, Verdict
 
 __all__ = ["ChaosFixture", "ChaosHypothesisFailed"]
 

@@ -6,8 +6,8 @@ import jsonschema
 import pytest
 import yaml
 
-from agentic_chaos import loader, schema
-from agentic_chaos.cli import main
+from agentic_chaos_security import loader, schema
+from agentic_chaos_security.cli import main
 
 ROOT = Path(__file__).parent.parent
 SCHEMA_FILE = ROOT / "schema/agentic-chaos.v1.schema.json"
@@ -20,7 +20,7 @@ def doc(**spec) -> dict:
 
 
 def test_committed_schema_is_up_to_date():
-    """Regenerate with: agentic-chaos schema --output schema/agentic-chaos.v1.schema.json"""
+    """Regenerate with: agentic-chaos-security schema --output schema/agentic-chaos.v1.schema.json"""
     assert json.loads(SCHEMA_FILE.read_text(encoding="utf-8")) == schema.json_schema()
 
 

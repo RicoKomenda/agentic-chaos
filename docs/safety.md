@@ -23,9 +23,9 @@ nothing, when any of these is set:
 
 | Switch | Use |
 | --- | --- |
-| `AGENTIC_CHAOS_DISABLED=1` | environment of the process (also makes `agentic-chaos run` refuse to start) |
+| `AGENTIC_CHAOS_DISABLED=1` | environment of the process (also makes `agentic-chaos-security run` refuse to start) |
 | `AGENTIC_CHAOS_KILL_FILE=/path/to/file` | a running process stops injecting within a second of the file being created, e.g. a long-lived MCP proxy in front of a production server |
-| `agentic_chaos.runtime.disable()` | from code, e.g. a feature flag or admin endpoint |
+| `agentic_chaos_security.runtime.disable()` | from code, e.g. a feature flag or admin endpoint |
 
 ## Secrets in traces and reports
 

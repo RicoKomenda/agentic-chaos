@@ -79,7 +79,7 @@ probes:
     min_pass_rate: 0.9
 ```
 
-`agentic_chaos.judges.OpenAICompatibleJudge(model=..., base_url=...)` grades with any OpenAI-compatible
+`agentic_chaos_security.judges.OpenAICompatibleJudge(model=..., base_url=...)` grades with any OpenAI-compatible
 endpoint. Judges run outside the chaos session, so their own model calls are never faulted. A judge is a
 model too: validate it on labelled examples, give it a pass-rate threshold, and keep deterministic probes for
 everything that can be checked without one.

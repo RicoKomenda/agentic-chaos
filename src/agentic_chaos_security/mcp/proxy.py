@@ -19,8 +19,8 @@ is in flight*: it sends ``sampling/createMessage`` or ``elicitation/create`` req
 floods to the client and records how the client answers.
 
 Use it in-process (``async with McpChaosProxy(cmd) as endpoint``) inside an experiment, or as a
-stand-alone stdio proxy in front of any MCP client: ``agentic-chaos mcp-proxy --faults f.yaml -- cmd``.
-For servers that speak Streamable HTTP, see :mod:`agentic_chaos.mcp.http`.
+stand-alone stdio proxy in front of any MCP client: ``agentic-chaos-security mcp-proxy --faults f.yaml -- cmd``.
+For servers that speak Streamable HTTP, see :mod:`agentic_chaos_security.mcp.http`.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import json
 import sys
 from typing import Any
 
-from agentic_chaos.mcp.core import McpChaosCore
+from agentic_chaos_security.mcp.core import McpChaosCore
 
 __all__ = [
     "Endpoint",

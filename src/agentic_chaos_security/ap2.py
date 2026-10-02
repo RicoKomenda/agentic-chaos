@@ -20,8 +20,8 @@ import hashlib
 import json
 from typing import Any
 
-from agentic_chaos.probes import PROBES, Probe, ProbeResult
-from agentic_chaos.runtime import Trace, record
+from agentic_chaos_security.probes import PROBES, Probe, ProbeResult
+from agentic_chaos_security.runtime import Trace, record
 
 __all__ = [
     "cart_hash",

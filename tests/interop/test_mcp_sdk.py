@@ -9,9 +9,9 @@ import pytest
 mcp = pytest.importorskip("mcp")
 mcp_types = pytest.importorskip("mcp_types")
 
-from agentic_chaos import faults, probes  # noqa: E402
-from agentic_chaos.mcp.http import McpHttpProxy  # noqa: E402
-from agentic_chaos.runtime import Session, bound  # noqa: E402
+from agentic_chaos_security import faults, probes  # noqa: E402
+from agentic_chaos_security.mcp.http import McpHttpProxy  # noqa: E402
+from agentic_chaos_security.runtime import Session, bound  # noqa: E402
 
 from .conftest import ROOT  # noqa: E402
 
@@ -75,7 +75,16 @@ def test_stdio_proxy_with_sdk_client_and_server(mode, tmp_path):
     )
     trace = tmp_path / "trace.json"
     recorder = Recorder()
-    command = [sys.executable, "-m", "agentic_chaos.cli", "mcp-proxy", "--faults", config, "--trace", str(trace)]
+    command = [
+        sys.executable,
+        "-m",
+        "agentic_chaos_security.cli",
+        "mcp-proxy",
+        "--faults",
+        config,
+        "--trace",
+        str(trace),
+    ]
     params = mcp.StdioServerParameters(command=command[0], args=[*command[1:], "--", sys.executable, SERVER])
 
     async def main():

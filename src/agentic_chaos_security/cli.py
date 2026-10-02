@@ -1,4 +1,4 @@
-"""Command line interface: ``agentic-chaos run experiments/*.yaml``."""
+"""Command line interface: ``agentic-chaos-security run experiments/*.yaml``."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from agentic_chaos import __version__, faults, loader, probes, report, runtime, schema
-from agentic_chaos.experiment import Verdict
-from agentic_chaos.redact import Redactor, redact
+from agentic_chaos_security import __version__, faults, loader, probes, report, runtime, schema
+from agentic_chaos_security.experiment import Verdict
+from agentic_chaos_security.redact import Redactor, redact
 
 __all__ = [
     "main",
@@ -18,7 +18,9 @@ __all__ = [
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="agentic-chaos", description="Security chaos engineering for AI agents.")
+    parser = argparse.ArgumentParser(
+        prog="agentic-chaos-security", description="Security chaos engineering for AI agents."
+    )
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -39,8 +41,8 @@ def main(argv: list[str] | None = None) -> int:
         "mcp-proxy",
         help="run a fault-injecting MCP proxy in front of an MCP server (stdio or Streamable HTTP)",
         description=(
-            "stdio:  agentic-chaos mcp-proxy --faults f.yaml -- npx -y <mcp-server-package>\n"
-            "HTTP:   agentic-chaos mcp-proxy --faults f.yaml --upstream https://host/mcp --listen 127.0.0.1:8765"
+            "stdio:  achaos mcp-proxy --faults f.yaml -- npx -y <mcp-server-package>\n"
+            "HTTP:   achaos mcp-proxy --faults f.yaml --upstream https://host/mcp --listen 127.0.0.1:8765"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -115,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
                 handle.write(render(results, redactor=redactor))
             print(f"report written to {path}")
     if args.otel:
-        from agentic_chaos.integrations import otel
+        from agentic_chaos_security.integrations import otel
 
         otel.export(results, redactor=redactor)
     if args.report:
@@ -168,8 +170,8 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
     import asyncio
     import signal
 
-    from agentic_chaos.mcp import McpChaosProxy, StdioEndpoint
-    from agentic_chaos.runtime import Session, bound
+    from agentic_chaos_security.mcp import McpChaosProxy, StdioEndpoint
+    from agentic_chaos_security.runtime import Session, bound
 
     command = args.server[1:] if args.server[:1] == ["--"] else args.server
     if not command and not args.upstream:
@@ -181,7 +183,7 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
     async def serve() -> None:
         with bound(session):
             if args.upstream:
-                from agentic_chaos.mcp.http import McpHttpProxy
+                from agentic_chaos_security.mcp.http import McpHttpProxy
 
                 host, _, port = args.listen.rpartition(":")
                 if not _is_loopback(host) and not args.allow_remote:

@@ -22,7 +22,7 @@ inputs:
     required: false
     default: "3.12"
   version:
-    description: agentic-chaos version spec to install from PyPI (e.g. "==1.0.0"). Empty installs the action's own revision.
+    description: agentic-chaos-security version spec to install from PyPI (e.g. "==1.0.0"). Empty installs the action's own revision.
     required: false
     default: ""
   install:
@@ -58,7 +58,7 @@ runs:
         INSTALL: ${{ inputs.install }}
       run: |
         if [ -n "$VERSION" ]; then
-          python -m pip install "agentic-chaos$VERSION"
+          python -m pip install "agentic-chaos-security$VERSION"
         else
           python -m pip install "$ACTION_PATH"
         fi
@@ -83,7 +83,7 @@ runs:
         set +e
         # word splitting and globbing of EXPERIMENTS are intended (multiple paths, globs)
         # shellcheck disable=SC2086
-        agentic-chaos run $EXPERIMENTS "${args[@]}"
+        agentic-chaos-security run $EXPERIMENTS "${args[@]}"
         code=$?
         set -e
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"

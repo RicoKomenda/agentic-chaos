@@ -1,8 +1,8 @@
 import pytest
 
-from agentic_chaos import Experiment, Verdict, faults, probes
-from agentic_chaos.runtime import Trace
-from agentic_chaos.stats import runs_needed, wilson_interval
+from agentic_chaos_security import Experiment, Verdict, faults, probes
+from agentic_chaos_security.runtime import Trace
+from agentic_chaos_security.stats import runs_needed, wilson_interval
 
 
 def test_wilson_interval_known_values():
@@ -20,7 +20,7 @@ def test_runs_needed():
 
 def flaky(rate_percent: int):
     """A target that 'succeeds' in rate_percent of runs, decided by the run's own fault draws."""
-    import agentic_chaos as chaos
+    import agentic_chaos_security as chaos
 
     @chaos.tool(name="coin")
     def coin():
@@ -96,14 +96,14 @@ def keyword_judge(criterion, output, trace):
 
 
 def test_judge_reply_parsing():
-    from agentic_chaos.judges import parse_verdict
+    from agentic_chaos_security.judges import parse_verdict
 
     assert parse_verdict('```json\n{"pass": true, "reason": "ok"}\n```') == (True, "ok")
     assert parse_verdict("no idea")[0] is False
 
 
 def test_loader_reads_thresholds(tmp_path):
-    from agentic_chaos import loader
+    from agentic_chaos_security import loader
 
     path = tmp_path / "e.yaml"
     path.write_text(

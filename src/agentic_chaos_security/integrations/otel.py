@@ -1,7 +1,7 @@
-"""Export experiment results as OpenTelemetry traces (``pip install 'agentic-chaos[otel]'``).
+"""Export experiment results as OpenTelemetry traces (``pip install 'agentic-chaos-security[otel]'``).
 
 One span per experiment, a child span per run (baseline and chaos), and the run's trace events as span
-events. Attributes are redacted like JSON reports. With ``agentic-chaos run --otel`` and no tracer
+events. Attributes are redacted like JSON reports. With ``agentic-chaos-security run --otel`` and no tracer
 provider configured, spans are sent with the OTLP/HTTP exporter, configured by the standard
 ``OTEL_EXPORTER_OTLP_*`` environment variables.
 """
@@ -16,10 +16,10 @@ from typing import Any
 try:
     from opentelemetry import trace
 except ImportError as exc:  # pragma: no cover
-    raise ImportError("install the otel extra: pip install 'agentic-chaos[otel]'") from exc
+    raise ImportError("install the otel extra: pip install 'agentic-chaos-security[otel]'") from exc
 
-from agentic_chaos.experiment import ExperimentResult
-from agentic_chaos.redact import Redactor, redact
+from agentic_chaos_security.experiment import ExperimentResult
+from agentic_chaos_security.redact import Redactor, redact
 
 __all__ = ["MAX_EVENTS", "export"]
 
@@ -42,7 +42,7 @@ def export(
 ) -> None:
     """Emit spans for ``results``. Uses the global tracer provider unless one is given."""
     provider = tracer_provider or _default_provider()
-    tracer = provider.get_tracer("agentic_chaos")
+    tracer = provider.get_tracer("agentic_chaos_security")
 
     def clean(value: Any) -> Any:
         if redactor is False:
@@ -100,7 +100,7 @@ def _default_provider() -> Any:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
     except ImportError as exc:  # pragma: no cover
-        raise ImportError("install the otel extra: pip install 'agentic-chaos[otel]'") from exc
+        raise ImportError("install the otel extra: pip install 'agentic-chaos-security[otel]'") from exc
     sdk_provider = TracerProvider(resource=Resource.create({"service.name": "agentic-chaos"}))
     sdk_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     return sdk_provider

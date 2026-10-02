@@ -26,10 +26,10 @@ from typing import Any
 
 import httpx2
 
-import agentic_chaos as chaos
-from agentic_chaos.integrations.httpx2 import ChaosTransport
-from agentic_chaos.probes import PROBES, ProbeResult
-from agentic_chaos.runtime import Trace, intercept, record, suspended
+import agentic_chaos_security as chaos
+from agentic_chaos_security.integrations.httpx2 import ChaosTransport
+from agentic_chaos_security.probes import PROBES, ProbeResult
+from agentic_chaos_security.runtime import Trace, intercept, record, suspended
 
 DVMA_PATH = Path(os.environ.get("DVMA_PATH", Path(__file__).resolve().parents[3] / "damn-vulnerable-memory-agent"))
 MODEL_HOST = "model.test"

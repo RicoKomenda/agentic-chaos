@@ -3,7 +3,7 @@ import textwrap
 pytest_plugins = ["pytester"]
 
 TARGET = """
-import agentic_chaos as chaos
+import agentic_chaos_security as chaos
 
 @chaos.tool(name="lookup")
 def lookup():
@@ -62,7 +62,7 @@ def test_fixture(pytester):
     pytester.makepyfile(
         test_uses_fixture="""
         import pytest
-        from agentic_chaos.pytest_plugin import ChaosHypothesisFailed
+        from agentic_chaos_security.pytest_plugin import ChaosHypothesisFailed
 
         def test_robust(chaos):
             chaos.assert_held("exp_robust.yaml")

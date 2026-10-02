@@ -1,7 +1,7 @@
 """Report formats for experiment results: JUnit XML, Markdown and a self-contained HTML page.
 
 All formats are built from :meth:`ExperimentResult.to_dict`, so they are redacted the same way as JSON
-reports (see :mod:`agentic_chaos.redact`).
+reports (see :mod:`agentic_chaos_security.redact`).
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from typing import Any
 from xml.etree import ElementTree as ET
 
-from agentic_chaos.experiment import ExperimentResult, Verdict
-from agentic_chaos.redact import Redactor
+from agentic_chaos_security.experiment import ExperimentResult, Verdict
+from agentic_chaos_security.redact import Redactor
 
 __all__ = ["to_html", "to_junit", "to_markdown"]
 
@@ -56,7 +56,9 @@ def to_junit(
         case = ET.SubElement(
             testsuite,
             "testcase",
-            classname=".".join(["agentic_chaos", *report["tags"][:1]]) if report["tags"] else "agentic_chaos",
+            classname=".".join(["agentic_chaos_security", *report["tags"][:1]])
+            if report["tags"]
+            else "agentic_chaos_security",
             name=report["name"],
             time=f"{duration:.3f}",
         )

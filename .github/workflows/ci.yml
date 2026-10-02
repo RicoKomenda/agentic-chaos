@@ -35,13 +35,13 @@ jobs:
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run agentic-chaos validate experiments
+      - run: uv run agentic-chaos-security validate experiments
       - run: uv run pytest -W error::DeprecationWarning
       - name: Hardened demo targets pass the catalogs
         run: |
-          uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened
-          uv run agentic-chaos run experiments/mcp --target examples.mcp_demo.host:hardened
-          uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
+          uv run agentic-chaos-security run experiments/*.yaml --target examples.mailbot.agent:hardened
+          uv run agentic-chaos-security run experiments/mcp --target examples.mcp_demo.host:hardened
+          uv run agentic-chaos-security run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
 
   interop:
     runs-on: ubuntu-latest

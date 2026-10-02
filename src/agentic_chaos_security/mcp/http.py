@@ -3,7 +3,7 @@
     client --HTTP--> McpHttpProxy (listens locally) --HTTP--> upstream MCP endpoint
 
 Point the client at the proxy URL instead of the server. ``POST`` requests are mapped onto injection
-points exactly like the stdio proxy (see :mod:`agentic_chaos.mcp.proxy`). JSON and SSE (``text/event-stream``)
+points exactly like the stdio proxy (see :mod:`agentic_chaos_security.mcp.proxy`). JSON and SSE (``text/event-stream``)
 responses are both supported. Server-initiated requests injected by faults (sampling, elicitation,
 notification floods) are delivered on an SSE stream for the request in flight, as the specification
 requires; the client's answers arrive as separate ``POST`` requests and are recorded, not forwarded.
@@ -30,17 +30,17 @@ from urllib.parse import urlsplit
 try:
     import httpx
 except ImportError as exc:  # pragma: no cover
-    raise ImportError("install the httpx extra: pip install 'agentic-chaos[httpx]'") from exc
+    raise ImportError("install the httpx extra: pip install 'agentic-chaos-security[httpx]'") from exc
 
-from agentic_chaos import _sse as sse
-from agentic_chaos.mcp.core import McpChaosCore
+from agentic_chaos_security import _sse as sse
+from agentic_chaos_security.mcp.core import McpChaosCore
 
 __all__ = [
     "Limits",
     "McpHttpProxy",
 ]
 
-log = logging.getLogger("agentic_chaos.mcp.http")
+log = logging.getLogger("agentic_chaos_security.mcp.http")
 
 _HOP_BY_HOP = {"host", "content-length", "connection", "transfer-encoding", "keep-alive", "accept-encoding"}
 _RESPONSE_HEADERS = {"content-type", "mcp-session-id", "mcp-protocol-version", "www-authenticate", "retry-after"}

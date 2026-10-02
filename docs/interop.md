@@ -32,7 +32,7 @@ Building the interop suite changed the library and surfaced behaviour worth know
 3. **A2A 1.0 renamed the JSON-RPC methods** (`SendMessage`, `SendStreamingMessage`, `GetTask`, ...)
    and added an HTTP+JSON binding (`/message:send`). The A2A transport now recognises 1.0, 0.3 and REST.
 4. **Current OpenAI, Anthropic and MCP SDKs use `httpx2`**, not `httpx`. Transports are built per module:
-   use `agentic_chaos.integrations.httpx2` for those SDKs.
+   use `agentic_chaos_security.integrations.httpx2` for those SDKs.
 5. **On an empty 200 response the OpenAI SDK raises a bare `json.JSONDecodeError`**, not `openai.APIError`.
    Applications that only catch `APIError` crash on a malformed provider or gateway response.
 6. **Without an OAuth provider configured, the MCP SDK client surfaces a 401 as a generic error**

@@ -32,8 +32,8 @@ wheels = [
 ]
 
 [[package]]
-name = "agentic-chaos"
-version = "0.1.0.dev0"
+name = "agentic-chaos-security"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

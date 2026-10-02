@@ -1,6 +1,6 @@
 """Fault library.
 
-A fault acts on one or more injection points (see :data:`agentic_chaos.runtime.POINTS`) and
+A fault acts on one or more injection points (see :data:`agentic_chaos_security.runtime.POINTS`) and
 on targets whose name matches a glob (``"*"``, ``"web_*"``, ``"guardrail.input"``).
 Reliability faults reproduce the things that break in production; security faults
 reproduce what an adversary - or a failing security control - would do.
@@ -12,8 +12,8 @@ import copy
 import fnmatch
 from typing import Any, ClassVar
 
-from agentic_chaos import payloads
-from agentic_chaos.runtime import POINTS, InjectionContext
+from agentic_chaos_security import payloads
+from agentic_chaos_security.runtime import POINTS, InjectionContext
 
 __all__ = [
     "AuthError",
@@ -551,7 +551,7 @@ class Reroute(Fault):
         raise Redirect(self.host, self.model)
 
 
-# --- MCP protocol faults (used by agentic_chaos.mcp.proxy) --------------------------------
+# --- MCP protocol faults (used by agentic_chaos_security.mcp.proxy) --------------------------------
 
 
 class ShadowTool(Fault):

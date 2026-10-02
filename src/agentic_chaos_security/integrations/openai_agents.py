@@ -1,6 +1,6 @@
 """OpenAI Agents SDK adapter: put function tools under chaos.
 
-    from agentic_chaos.integrations.openai_agents import instrument_tools
+    from agentic_chaos_security.integrations.openai_agents import instrument_tools
     agent = Agent(name="assistant", tools=instrument_tools([search, send_email]))
 
 Each call passes ``tool.call`` (with the parsed arguments) and ``tool.result`` (target = the tool's name).
@@ -20,7 +20,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("openai-agents is not installed") from exc
 
-from agentic_chaos.inject import tool as instrument
+from agentic_chaos_security.inject import tool as instrument
 
 __all__ = ["instrument_tool", "instrument_tools"]
 

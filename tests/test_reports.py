@@ -3,9 +3,9 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-import agentic_chaos as chaos
-from agentic_chaos import Experiment, faults, probes, report
-from agentic_chaos.cli import main
+import agentic_chaos_security as chaos
+from agentic_chaos_security import Experiment, faults, probes, report
+from agentic_chaos_security.cli import main
 
 SECRET = "sk-live-0123456789abcdefABCDEF"
 
@@ -33,7 +33,7 @@ def test_junit(results):
     assert root.get("tests") == "3" and root.get("failures") == "1" and root.get("errors") == "1"
     cases = {c.get("name"): c for c in root.iter("testcase")}
     assert cases["breaks"].find("failure") is not None and cases["misses"].find("error") is not None
-    assert cases["holds"].get("classname") == "agentic_chaos.ASI08"
+    assert cases["holds"].get("classname") == "agentic_chaos_security.ASI08"
 
 
 def test_markdown(results):
@@ -52,7 +52,7 @@ def test_otel_export(results):
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-    from agentic_chaos.integrations import otel
+    from agentic_chaos_security.integrations import otel
 
     exporter = InMemorySpanExporter()
     provider = TracerProvider()

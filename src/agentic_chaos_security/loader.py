@@ -1,4 +1,4 @@
-"""Load experiments from declarative YAML files (format: :mod:`agentic_chaos.schema`).
+"""Load experiments from declarative YAML files (format: :mod:`agentic_chaos_security.schema`).
 
 apiVersion: agentic-chaos/v1
 kind: Experiment
@@ -34,10 +34,10 @@ from typing import Any, cast
 
 import yaml
 
-from agentic_chaos import faults as fault_lib
-from agentic_chaos import probes as probe_lib
-from agentic_chaos.experiment import Experiment
-from agentic_chaos.schema import API_VERSION, ValidationError, validate
+from agentic_chaos_security import faults as fault_lib
+from agentic_chaos_security import probes as probe_lib
+from agentic_chaos_security.experiment import Experiment
+from agentic_chaos_security.schema import API_VERSION, ValidationError, validate
 
 __all__ = ["API_VERSION", "ValidationError", "expand", "from_dict", "load", "load_proxy_config", "read", "resolve"]
 _FAULT_KEYS = {"target", "point", "probability", "after_calls", "max_injections"}

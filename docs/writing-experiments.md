@@ -9,7 +9,7 @@ Point your editor at the JSON Schema for completion and inline errors, e.g. with
 apiVersion: agentic-chaos/v1
 ```
 
-`agentic-chaos validate experiments/` checks files without running them and reports every problem with a
+`agentic-chaos-security validate experiments/` checks files without running them and reports every problem with a
 suggestion (`spec.faults[0].params.payloadd: unknown parameter for fault 'inject_instruction' (did you mean 'payload'?)`).
 
 ## 1. Pick the seams
@@ -40,7 +40,7 @@ Good hypotheses are specific and falsifiable:
 If a built-in probe does not fit, write one:
 
 ```python
-from agentic_chaos import probes
+from agentic_chaos_security import probes
 
 no_pii = probes.custom(lambda trace: "@" not in str(trace.output), name="no_email_in_output")
 ```
@@ -63,7 +63,7 @@ faults:
 ## 5. Run often, compare over time
 
 ```bash
-agentic-chaos run experiments/*.yaml --runs 20 --report chaos-report.json --traces
+agentic-chaos-security run experiments/*.yaml --runs 20 --report chaos-report.json --traces
 ```
 
 Store the JSON reports. A pass rate that drops after a model or prompt change is a regression, even if it

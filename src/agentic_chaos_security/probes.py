@@ -12,7 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from agentic_chaos.runtime import Trace, iter_strings
+from agentic_chaos_security.runtime import Trace, iter_strings
 
 __all__ = [
     "PROBES",
@@ -403,14 +403,14 @@ def judge(judge: str | Callable[..., Any], criterion: str, threshold: float = 0.
     ``judge`` is a callable or a ``"module:callable"`` path with signature
     ``(criterion: str, output: Any, trace: Trace) -> bool | float | tuple[bool | float, str]``. Floats are
     compared with ``threshold``. Judges run outside the chaos session, so their own model calls are
-    never faulted. See :mod:`agentic_chaos.judges` for an OpenAI-compatible judge.
+    never faulted. See :mod:`agentic_chaos_security.judges` for an OpenAI-compatible judge.
     """
-    from agentic_chaos.runtime import suspended
+    from agentic_chaos_security.runtime import suspended
 
     def resolve() -> Callable[..., Any]:
         if callable(judge):
             return judge
-        from agentic_chaos.loader import resolve as resolve_entrypoint
+        from agentic_chaos_security.loader import resolve as resolve_entrypoint
 
         return resolve_entrypoint(judge)
 

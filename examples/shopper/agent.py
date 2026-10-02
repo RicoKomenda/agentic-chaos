@@ -28,8 +28,8 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-import agentic_chaos as chaos
-from agentic_chaos import ap2
+import agentic_chaos_security as chaos
+from agentic_chaos_security import ap2
 
 log = logging.getLogger("shopper")
 

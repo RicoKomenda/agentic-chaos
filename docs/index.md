@@ -9,8 +9,8 @@ latency, malformed output) and adversaries (prompt injection, tool and memory po
 security controls). It then checks that your security and resilience invariants still hold.
 
 ```bash
-pip install agentic-chaos
-agentic-chaos run experiments/ --target my_app.agent:handle
+pip install agentic-chaos-security
+agentic-chaos-security run experiments/ --target my_app.agent:handle
 ```
 
 - **Start here:** [Principles](principles.md), then [Writing experiments](writing-experiments.md).

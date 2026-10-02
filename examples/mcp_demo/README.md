@@ -2,9 +2,9 @@
 
 - `server.py`: a dependency-free MCP server (stdio) with `fetch_page`, `send_email` and a `notes://alice` resource.
 - `http_server.py`: the same server over Streamable HTTP (`python examples/mcp_demo/http_server.py 8000`), for trying
-  `agentic-chaos mcp-proxy --upstream http://127.0.0.1:8000/mcp`.
+  `agentic-chaos-security mcp-proxy --upstream http://127.0.0.1:8000/mcp`.
 - `host.py`: a tiny MCP host with a scripted "model". It connects to the server through
-  `agentic_chaos.mcp.McpChaosProxy`, so every experiment injects faults on the wire.
+  `agentic_chaos_security.mcp.McpChaosProxy`, so every experiment injects faults on the wire.
 
 | Behaviour | `naive` | `hardened` |
 | --- | --- | --- |
@@ -15,6 +15,6 @@
 | Tool errors | crash the run | graceful message |
 
 ```bash
-uv run agentic-chaos run experiments/mcp --target examples.mcp_demo.host:naive
-uv run agentic-chaos run experiments/mcp --target examples.mcp_demo.host:hardened
+uv run agentic-chaos-security run experiments/mcp --target examples.mcp_demo.host:naive
+uv run agentic-chaos-security run experiments/mcp --target examples.mcp_demo.host:hardened
 ```

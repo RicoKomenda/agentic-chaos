@@ -3,9 +3,9 @@ import json
 import httpx
 import pytest
 
-from agentic_chaos import faults, probes
-from agentic_chaos.integrations.a2a import A2AChaosTransport
-from agentic_chaos.runtime import Session, bound
+from agentic_chaos_security import faults, probes
+from agentic_chaos_security.integrations.a2a import A2AChaosTransport
+from agentic_chaos_security.runtime import Session, bound
 
 CARD = {"name": "merchant", "url": "https://merchant.example/a2a", "skills": [{"id": "checkout"}]}
 
@@ -111,7 +111,7 @@ def test_duplicate_delivery():
 def test_async_stream_transformed():
     import asyncio
 
-    from agentic_chaos.integrations.a2a import AsyncA2AChaosTransport
+    from agentic_chaos_security.integrations.a2a import AsyncA2AChaosTransport
 
     async def main():
         transport = AsyncA2AChaosTransport(httpx.MockTransport(streaming_agent))

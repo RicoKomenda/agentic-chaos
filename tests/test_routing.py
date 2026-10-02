@@ -4,10 +4,10 @@ import json
 
 import httpx
 
-import agentic_chaos as chaos
-from agentic_chaos import faults, probes
-from agentic_chaos.integrations.httpx import ChaosTransport
-from agentic_chaos.runtime import Session, Trace, bound
+import agentic_chaos_security as chaos
+from agentic_chaos_security import faults, probes
+from agentic_chaos_security.integrations.httpx import ChaosTransport
+from agentic_chaos_security.runtime import Session, Trace, bound
 
 
 def provider(request: httpx.Request) -> httpx.Response:

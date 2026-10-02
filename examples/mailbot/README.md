@@ -11,9 +11,9 @@ models do. It needs no API key, so the whole experiment catalog runs offline.
 | `hardened` | yes, full context | answers in read-only safe mode (no side effects) | allow-listed recipients | retries, graceful messages |
 
 ```bash
-uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:naive
-uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:guarded_fail_open
-uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened
+uv run agentic-chaos-security run experiments/*.yaml --target examples.mailbot.agent:naive
+uv run agentic-chaos-security run experiments/*.yaml --target examples.mailbot.agent:guarded_fail_open
+uv run agentic-chaos-security run experiments/*.yaml --target examples.mailbot.agent:hardened
 ```
 
 The interesting case is `guarded_fail_open`: it passes the plain prompt-injection experiment, so it looks

@@ -1,8 +1,8 @@
 import httpx
 
-from agentic_chaos import faults
-from agentic_chaos.integrations.httpx import ChaosTransport
-from agentic_chaos.runtime import Session, bound
+from agentic_chaos_security import faults
+from agentic_chaos_security.integrations.httpx import ChaosTransport
+from agentic_chaos_security.runtime import Session, bound
 
 
 def client() -> httpx.Client:

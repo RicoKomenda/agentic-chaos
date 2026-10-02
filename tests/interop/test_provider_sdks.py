@@ -11,9 +11,9 @@ openai = pytest.importorskip("openai")
 anthropic = pytest.importorskip("anthropic")
 httpx2 = pytest.importorskip("httpx2")
 
-from agentic_chaos import faults, probes  # noqa: E402
-from agentic_chaos.integrations.httpx2 import ChaosTransport  # noqa: E402
-from agentic_chaos.runtime import Session, bound  # noqa: E402
+from agentic_chaos_security import faults, probes  # noqa: E402
+from agentic_chaos_security.integrations.httpx2 import ChaosTransport  # noqa: E402
+from agentic_chaos_security.runtime import Session, bound  # noqa: E402
 
 pytestmark = pytest.mark.interop
 ANSWER = "Quarterly results are up 4%."

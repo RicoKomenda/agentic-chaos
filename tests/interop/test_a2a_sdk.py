@@ -22,9 +22,9 @@ from a2a.utils.constants import TransportProtocol  # noqa: E402
 from google.protobuf.json_format import MessageToDict  # noqa: E402
 from starlette.applications import Starlette  # noqa: E402
 
-from agentic_chaos import faults, probes  # noqa: E402
-from agentic_chaos.integrations.a2a import AsyncA2AChaosTransport  # noqa: E402
-from agentic_chaos.runtime import Session, bound  # noqa: E402
+from agentic_chaos_security import faults, probes  # noqa: E402
+from agentic_chaos_security.integrations.a2a import AsyncA2AChaosTransport  # noqa: E402
+from agentic_chaos_security.runtime import Session, bound  # noqa: E402
 
 pytestmark = pytest.mark.interop
 BASE = "http://merchant.test"

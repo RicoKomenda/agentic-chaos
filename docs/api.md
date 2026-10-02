@@ -6,21 +6,21 @@ notice. `tests/public_api.json` is a snapshot of the public surface; changing it
 
 | Module | What it is for |
 | --- | --- |
-| `agentic_chaos` | the everyday API: `Experiment`, `Verdict`, `ExperimentResult`, `ProbeStats`, instrumentation decorators (`tool`, `llm`, `memory`, `control`, `agent`, `payment`), `describe_tool`, `discover_agent`, `output`, `intercept`, `suspended`, and the `faults`, `probes`, `ap2` modules |
-| `agentic_chaos.faults` | fault classes, the `FAULTS` registry and `build`; errors raised by faults (`ChaosError`, `ChaosTimeout`, `ChaosRateLimit`, `ChaosAuthError`); `Override` and `Repeat` for integration authors |
-| `agentic_chaos.probes` | probe factories, `PROBES` registry, `build`, `expect`, `custom`, `Probe`, `ProbeResult` |
-| `agentic_chaos.ap2` | AP2 recording helpers and payment probes |
-| `agentic_chaos.experiment` | `Experiment`, `ExperimentResult`, `RunResult`, `ProbeStats`, `Verdict` |
-| `agentic_chaos.loader` | `load`, `from_dict`, `read`, `expand`, `load_proxy_config`, `resolve`, `ValidationError` |
-| `agentic_chaos.schema` | `validate`, `json_schema`, `API_VERSION`, `DEPRECATED_VERSIONS`, signature introspection |
-| `agentic_chaos.runtime` | sessions and traces for custom integrations: `Session`, `Trace`, `Event`, `bound`, `current`, `intercept`, `record`, `suspended`, `POINTS` |
-| `agentic_chaos.inject` | the instrumentation decorators (re-exported at top level) |
-| `agentic_chaos.payloads` | built-in canary payloads, `render`, `new_canary` |
-| `agentic_chaos.stats` | `wilson_interval`, `runs_needed` |
-| `agentic_chaos.judges` | `OpenAICompatibleJudge`, `parse_verdict` |
-| `agentic_chaos.mcp` | `McpChaosProxy` (stdio), `Endpoint`, `StdioEndpoint`; `mcp.http.McpHttpProxy`; `mcp.core` for custom transports |
-| `agentic_chaos.integrations.httpx` / `httpx2` / `a2a` | provider and A2A transports, `build(module)` for other httpx-compatible clients |
-| `agentic_chaos.cli` | `main(argv)` |
+| `agentic_chaos_security` | the everyday API: `Experiment`, `Verdict`, `ExperimentResult`, `ProbeStats`, instrumentation decorators (`tool`, `llm`, `memory`, `control`, `agent`, `payment`), `describe_tool`, `discover_agent`, `output`, `intercept`, `suspended`, and the `faults`, `probes`, `ap2` modules |
+| `agentic_chaos_security.faults` | fault classes, the `FAULTS` registry and `build`; errors raised by faults (`ChaosError`, `ChaosTimeout`, `ChaosRateLimit`, `ChaosAuthError`); `Override` and `Repeat` for integration authors |
+| `agentic_chaos_security.probes` | probe factories, `PROBES` registry, `build`, `expect`, `custom`, `Probe`, `ProbeResult` |
+| `agentic_chaos_security.ap2` | AP2 recording helpers and payment probes |
+| `agentic_chaos_security.experiment` | `Experiment`, `ExperimentResult`, `RunResult`, `ProbeStats`, `Verdict` |
+| `agentic_chaos_security.loader` | `load`, `from_dict`, `read`, `expand`, `load_proxy_config`, `resolve`, `ValidationError` |
+| `agentic_chaos_security.schema` | `validate`, `json_schema`, `API_VERSION`, `DEPRECATED_VERSIONS`, signature introspection |
+| `agentic_chaos_security.runtime` | sessions and traces for custom integrations: `Session`, `Trace`, `Event`, `bound`, `current`, `intercept`, `record`, `suspended`, `POINTS` |
+| `agentic_chaos_security.inject` | the instrumentation decorators (re-exported at top level) |
+| `agentic_chaos_security.payloads` | built-in canary payloads, `render`, `new_canary` |
+| `agentic_chaos_security.stats` | `wilson_interval`, `runs_needed` |
+| `agentic_chaos_security.judges` | `OpenAICompatibleJudge`, `parse_verdict` |
+| `agentic_chaos_security.mcp` | `McpChaosProxy` (stdio), `Endpoint`, `StdioEndpoint`; `mcp.http.McpHttpProxy`; `mcp.core` for custom transports |
+| `agentic_chaos_security.integrations.httpx` / `httpx2` / `a2a` | provider and A2A transports, `build(module)` for other httpx-compatible clients |
+| `agentic_chaos_security.cli` | `main(argv)` |
 
 ## Extension points
 

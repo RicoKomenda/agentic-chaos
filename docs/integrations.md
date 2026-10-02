@@ -15,7 +15,7 @@ provider transports: every framework below accepts a custom HTTP client.
 
 ```python
 from langgraph.prebuilt import ToolNode
-from agentic_chaos.integrations.langchain import instrument_tools
+from agentic_chaos_security.integrations.langchain import instrument_tools
 
 tool_node = ToolNode(instrument_tools([search, send_email]))
 ```
@@ -63,6 +63,6 @@ as the `exit-code` output.
 | `--junit junit.xml` | one test case per experiment; weaknesses are failures, inconclusive results are errors |
 | `--html report.html` | self-contained page with per-probe pass rates and confidence intervals |
 | `--markdown summary.md` | a summary table, appended to the file (use `$GITHUB_STEP_SUMMARY`) |
-| `--otel` | OpenTelemetry spans (`pip install 'agentic-chaos[otel]'`, configured by `OTEL_EXPORTER_OTLP_*`) |
+| `--otel` | OpenTelemetry spans (`pip install 'agentic-chaos-security[otel]'`, configured by `OTEL_EXPORTER_OTLP_*`) |
 
 All outputs are redacted (see [safety.md](safety.md#secrets-in-traces-and-reports)).

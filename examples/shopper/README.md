@@ -15,6 +15,6 @@ services (`agent.discover`, `agent.call`/`agent.message`, `payment.call`/`paymen
 | Processor | no replay protection | rejects replayed Payment Mandates |
 
 ```bash
-uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:naive
-uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
+uv run agentic-chaos-security run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:naive
+uv run agentic-chaos-security run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:hardened
 ```

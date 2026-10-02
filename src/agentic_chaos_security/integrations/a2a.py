@@ -1,7 +1,7 @@
 """Inject faults into Agent2Agent (A2A) traffic at the HTTP layer.
 
     import httpx
-    from agentic_chaos.integrations.a2a import A2AChaosTransport
+    from agentic_chaos_security.integrations.a2a import A2AChaosTransport
 
     http_client = httpx.AsyncClient(transport=AsyncA2AChaosTransport())   # pass to your A2A client
 
@@ -30,9 +30,9 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
-from agentic_chaos import _sse as sse
-from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Repeat
-from agentic_chaos.runtime import intercept, record
+from agentic_chaos_security import _sse as sse
+from agentic_chaos_security.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Repeat
+from agentic_chaos_security.runtime import intercept, record
 
 __all__ = [
     "A2AChaosTransport",
@@ -283,7 +283,7 @@ def build(http: ModuleType) -> tuple[type, type]:
 
 try:
     import httpx as _httpx
-except ImportError:  # pragma: no cover - httpx2-only environments use agentic_chaos.integrations.httpx2
+except ImportError:  # pragma: no cover - httpx2-only environments use agentic_chaos_security.integrations.httpx2
     pass
 else:
     A2AChaosTransport, AsyncA2AChaosTransport = build(_httpx)
