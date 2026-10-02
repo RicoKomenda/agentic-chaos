@@ -8,3 +8,5 @@ build/
 *.egg-info/
 .DS_Store
 chaos-report*.json
+.tmp-site/
+site/

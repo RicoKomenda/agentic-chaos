@@ -216,7 +216,7 @@ can be tested together. See [docs/statistics.md](docs/statistics.md).
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)
 - [Public API](docs/api.md) and [versioning policy](docs/versioning.md)
 - [Roadmap](docs/roadmap.md)
-- [Changelog](CHANGELOG.md)
+- [Changelog](CHANGELOG.md), [releasing](docs/releasing.md), [governance](GOVERNANCE.md), [maintainers](MAINTAINERS.md)
 
 ## Contributing
 

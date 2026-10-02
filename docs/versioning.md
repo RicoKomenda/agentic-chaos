@@ -9,7 +9,7 @@ Agentic Chaos follows [Semantic Versioning](https://semver.org/). The public sur
 | Removing or renaming anything public; changing a default that changes verdicts; incompatible format change | major |
 
 Before 1.0 (`0.x`), minor releases may still make breaking changes, but each one is listed under "Breaking" in
-the [CHANGELOG](../CHANGELOG.md) and follows the deprecation process below whenever possible.
+the [CHANGELOG](changelog.md) and follows the deprecation process below whenever possible.
 
 ## Deprecation
 

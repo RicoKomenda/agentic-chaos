@@ -26,7 +26,7 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 - [x] Safety of the tool: redaction, kill switch, proxy limits and binding, non-blocking latency
 - [x] Platform support: Windows and macOS CI, Python 3.14
 - [x] Framework adapters (LangChain/LangGraph, OpenAI Agents SDK, Pydantic AI), pytest plugin, GitHub Action, JUnit/HTML/OpenTelemetry output
-- [ ] Release engineering: PyPI trusted publishing, signed provenance, docs site
+- [x] Release engineering: PyPI trusted publishing, signed provenance, docs site (see releasing.md)
 - [x] Remaining risk coverage: `reroute`, residency/model/control/approval probes, recipes for ASI05/ASI09/ASI10
 
 ## Integrations

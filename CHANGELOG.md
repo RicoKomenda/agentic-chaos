@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/),
-and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versioning.md](docs/versioning.md)).
+and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versioning.md](https://github.com/RicoKomenda/agentic-chaos/blob/main/docs/versioning.md)).
 
 ## [Unreleased]
 
@@ -28,6 +28,7 @@ and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versi
 - Platform support: Windows, macOS, Python 3.10-3.14.
 - Integrations: tool adapters for LangChain/LangGraph, OpenAI Agents SDK and Pydantic AI; pytest plugin;
   GitHub Action; JUnit, HTML, Markdown and OpenTelemetry reports.
+- Release workflow (trusted publishing, Sigstore build provenance), MkDocs site, governance and maintainers.
 - Public API defined by `__all__`, `py.typed`, strict type checking.
 - Safety: reports and proxy traces are redacted by default (`--no-redact`, `--redact-pattern`); kill switch
   (`AGENTIC_CHAOS_DISABLED`, `AGENTIC_CHAOS_KILL_FILE`, `runtime.disable()`); HTTP proxy request limits,

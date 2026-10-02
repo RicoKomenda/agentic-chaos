@@ -13,11 +13,19 @@ requires-python = ">=3.10"
 authors = [{ name = "Agentic Chaos contributors" }]
 keywords = ["chaos engineering", "security", "ai agents", "llm", "resilience", "red teaming", "mcp"]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Framework :: Pytest",
   "Topic :: Security",
   "Topic :: Software Development :: Testing",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
 ]
 dependencies = ["pyyaml>=6"]
 
@@ -33,6 +41,9 @@ agentic_chaos = "agentic_chaos.pytest_plugin"
 
 [project.urls]
 Homepage = "https://github.com/RicoKomenda/agentic-chaos"
+Documentation = "https://ricokomenda.github.io/agentic-chaos/"
+Changelog = "https://github.com/RicoKomenda/agentic-chaos/blob/main/CHANGELOG.md"
+Issues = "https://github.com/RicoKomenda/agentic-chaos/issues"
 
 [dependency-groups]
 case-studies = [
@@ -50,6 +61,9 @@ dev = [
     "httpx2>=2.13.1",
     "opentelemetry-sdk>=1.25",
     "opentelemetry-exporter-otlp-proto-http>=1.25",
+]
+docs = [
+    "mkdocs-material>=9.7.7",
 ]
 interop = [
     "a2a-sdk>=1.2.1",
