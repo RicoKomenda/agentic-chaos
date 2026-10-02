@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-chaos"
+version = "0.1.0.dev0"
+description = "Security chaos engineering for AI agents and LLM applications."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Agentic Chaos contributors" }]
+keywords = ["chaos engineering", "security", "ai agents", "llm", "resilience", "red teaming", "mcp"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Security",
+  "Topic :: Software Development :: Testing",
+  "Programming Language :: Python :: 3",
+]
+dependencies = ["pyyaml>=6"]
+
+[project.optional-dependencies]
+httpx = ["httpx>=0.27"]
+
+[project.scripts]
+agentic-chaos = "agentic_chaos.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/agentic-chaos/agentic-chaos"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_chaos"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
