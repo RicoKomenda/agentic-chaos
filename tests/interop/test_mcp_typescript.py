@@ -20,7 +20,7 @@ PACKAGE = "@modelcontextprotocol/server-everything"
 def test_typescript_reference_server_through_proxy(mode, tmp_path):
     config = tmp_path / "proxy.yaml"
     config.write_text(
-        "apiVersion: agentic-chaos/v1alpha1\nkind: McpProxy\nspec:\n  faults:\n"
+        "apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults:\n"
         "    - {type: poison_tool_description, target: '*', after_calls: 1}\n"
         "    - {type: inject_instruction, target: echo, point: tool.result, params: {payload: goal_hijack}}\n"
     )

@@ -23,6 +23,11 @@ from typing import Any
 from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosTimeout, Override, Repeat
 from agentic_chaos.runtime import intercept, record
 
+__all__ = [
+    "Decision",
+    "McpChaosCore",
+]
+
 REQUEST_TIMEOUT = -32001  # code used by MCP SDKs for request timeouts
 PROTOCOL_VERSION_META_KEY = "io.modelcontextprotocol/protocolVersion"
 HANDSHAKE_VERSIONS = ("2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25")

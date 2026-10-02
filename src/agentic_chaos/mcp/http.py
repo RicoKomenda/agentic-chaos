@@ -28,8 +28,12 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("install the httpx extra: pip install 'agentic-chaos[httpx]'") from exc
 
-from agentic_chaos import sse
+from agentic_chaos import _sse as sse
 from agentic_chaos.mcp.core import McpChaosCore
+
+__all__ = [
+    "McpHttpProxy",
+]
 
 log = logging.getLogger("agentic_chaos.mcp.http")
 

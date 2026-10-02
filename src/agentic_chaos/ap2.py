@@ -23,6 +23,18 @@ from typing import Any
 from agentic_chaos.probes import PROBES, Probe, ProbeResult
 from agentic_chaos.runtime import Trace, record
 
+__all__ = [
+    "cart_hash",
+    "cart_matches_reviewed",
+    "cart_within_intent",
+    "max_settlements",
+    "payment_requires_extension",
+    "record_intent",
+    "record_payment_mandate",
+    "record_review",
+    "record_settlement",
+]
+
 
 def cart_hash(cart: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(cart, sort_keys=True, default=str).encode()).hexdigest()

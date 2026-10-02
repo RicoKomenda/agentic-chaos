@@ -1,5 +1,17 @@
 # Writing experiments
 
+## 0. Get editor support and validation
+
+Point your editor at the JSON Schema for completion and inline errors, e.g. with the YAML language server:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/RicoKomenda/agentic-chaos/main/schema/agentic-chaos.v1.schema.json
+apiVersion: agentic-chaos/v1
+```
+
+`agentic-chaos validate experiments/` checks files without running them and reports every problem with a
+suggestion (`spec.faults[0].params.payloadd: unknown parameter for fault 'inject_instruction' (did you mean 'payload'?)`).
+
 ## 1. Pick the seams
 
 List what your agent depends on and where untrusted data enters:

@@ -15,7 +15,8 @@ controlled, reproducible faults - both **accidents** (outages, latency, malforme
 **adversaries** (prompt injection, tool and memory poisoning, failing security controls) - and checks
 that your security and resilience invariants still hold.
 
-> Status: early development (`v0.1.0.dev0`). APIs and the experiment format may change.
+> Status: pre-release (`v0.1.0.dev0`). The experiment format (`agentic-chaos/v1`) and the public API
+> ([docs/api.md](docs/api.md)) follow the [versioning policy](docs/versioning.md).
 
 ## Why another chaos tool?
 
@@ -106,7 +107,7 @@ See [docs/protocols.md](docs/protocols.md).
 2. **Describe an experiment**: a hypothesis, the faults to inject, and the probes that define the steady state.
 
    ```yaml
-   apiVersion: agentic-chaos/v1alpha1
+   apiVersion: agentic-chaos/v1
    kind: Experiment
    metadata:
      name: guardrail-outage-fails-closed
@@ -211,7 +212,9 @@ can be tested together. See [docs/statistics.md](docs/statistics.md).
 - [Running chaos safely](docs/safety.md)
 - [Landscape and related work](docs/landscape.md)
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)
+- [Public API](docs/api.md) and [versioning policy](docs/versioning.md)
 - [Roadmap](docs/roadmap.md)
+- [Changelog](CHANGELOG.md)
 
 ## Contributing
 

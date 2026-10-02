@@ -1,6 +1,6 @@
-"""Load experiments from declarative YAML files.
+"""Load experiments from declarative YAML files (format: :mod:`agentic_chaos.schema`).
 
-apiVersion: agentic-chaos/v1alpha1
+apiVersion: agentic-chaos/v1
 kind: Experiment
 metadata:
   name: indirect-prompt-injection
@@ -30,15 +30,16 @@ import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
 from agentic_chaos import faults as fault_lib
 from agentic_chaos import probes as probe_lib
 from agentic_chaos.experiment import Experiment
+from agentic_chaos.schema import API_VERSION, ValidationError, validate
 
-API_VERSION = "agentic-chaos/v1alpha1"
+__all__ = ["API_VERSION", "ValidationError", "expand", "from_dict", "load", "load_proxy_config", "read", "resolve"]
 _FAULT_KEYS = {"target", "point", "probability", "after_calls", "max_injections"}
 
 
@@ -51,24 +52,51 @@ def resolve(entrypoint: str) -> Callable[..., Any]:
     obj: Any = importlib.import_module(module_name)
     for part in attr.split("."):
         obj = getattr(obj, part)
-    return obj
+    if not callable(obj):
+        raise TypeError(f"{entrypoint} is not callable")
+    return cast("Callable[..., Any]", obj)
+
+
+def read(path: str | Path) -> Any:
+    """Parse a YAML file, turning syntax errors into a :class:`ValidationError` with the location."""
+    try:
+        return yaml.safe_load(Path(path).read_text())
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        where = f"line {mark.line + 1}, column {mark.column + 1}: " if mark else ""
+        raise ValidationError([f"{where}invalid YAML ({getattr(exc, 'problem', exc)})"], str(path)) from None
 
 
 def load(path: str | Path, *, entrypoint: str | None = None, runs: int | None = None) -> Experiment:
-    doc = yaml.safe_load(Path(path).read_text())
-    return from_dict(doc, entrypoint=entrypoint, runs=runs)
+    try:
+        return from_dict(read(path), entrypoint=entrypoint, runs=runs)
+    except ValidationError as exc:
+        raise ValidationError(exc.errors, str(path)) from None
 
 
-def from_dict(doc: dict[str, Any], *, entrypoint: str | None = None, runs: int | None = None) -> Experiment:
-    if doc.get("apiVersion") != API_VERSION or doc.get("kind") != "Experiment":
-        raise ValueError(f"expected apiVersion {API_VERSION!r} and kind 'Experiment'")
+def from_dict(doc: Any, *, entrypoint: str | None = None, runs: int | None = None) -> Experiment:
+    """Validate an experiment document and build the :class:`Experiment`.
+
+    The target is imported before validation, so faults and probes that the target's package registers
+    (custom extensions) are known to the validator.
+    """
+    spec = doc.get("spec", {}) if isinstance(doc, dict) else {}
+    target_spec = spec.get("target", {}) if isinstance(spec, dict) else {}
+    entry = entrypoint or (target_spec.get("entrypoint") if isinstance(target_spec, dict) else None)
+    resolved = None
+    if isinstance(entry, str) and ":" in entry:
+        try:
+            resolved = resolve(entry)
+        except (ImportError, AttributeError, TypeError) as exc:
+            raise ValidationError([f"spec.target.entrypoint: cannot import {entry!r}: {exc}"]) from None
+    errors = validate(doc, entrypoint_override=entrypoint is not None)
+    if isinstance(doc, dict) and doc.get("kind") not in (None, "Experiment"):
+        errors.append(f"kind: expected 'Experiment' here, got {doc.get('kind')!r}")
+    if errors:
+        raise ValidationError(errors)
+    assert resolved is not None
     meta = doc.get("metadata", {})
-    spec = doc["spec"]
-    target_spec = spec.get("target", {})
-    entry = entrypoint or target_spec.get("entrypoint")
-    if not entry:
-        raise ValueError("no target entrypoint: set spec.target.entrypoint or pass --target")
-    target = functools.partial(resolve(entry), **target_spec.get("args", {}))
+    target = functools.partial(resolved, **target_spec.get("args", {}))
 
     return Experiment(
         name=meta["name"],
@@ -101,9 +129,12 @@ def _probe(item: dict[str, Any]) -> probe_lib.Probe:
 
 def load_proxy_config(path: str | Path) -> tuple[list[fault_lib.Fault], list[probe_lib.Probe], int | None]:
     """Load a ``kind: McpProxy`` file: the faults a stand-alone proxy injects and probes checked at shutdown."""
-    doc = yaml.safe_load(Path(path).read_text())
-    if doc.get("apiVersion") != API_VERSION or doc.get("kind") != "McpProxy":
-        raise ValueError(f"expected apiVersion {API_VERSION!r} and kind 'McpProxy'")
+    doc = read(path)
+    errors = validate(doc)
+    if isinstance(doc, dict) and doc.get("kind") != "McpProxy":
+        errors.append(f"kind: expected 'McpProxy' here, got {doc.get('kind')!r}")
+    if errors:
+        raise ValidationError(errors, str(path))
     spec = doc.get("spec", {})
     return (
         [_fault(f) for f in spec.get("faults", [])],
@@ -124,5 +155,8 @@ def expand(paths: list[Path]) -> list[Path]:
 
 
 def _kind(path: Path) -> str | None:
-    doc = yaml.safe_load(path.read_text())
+    try:
+        doc = yaml.safe_load(path.read_text())
+    except yaml.YAMLError:
+        return "Experiment"  # let load() report the syntax error
     return doc.get("kind") if isinstance(doc, dict) else None

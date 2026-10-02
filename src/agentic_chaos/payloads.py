@@ -9,6 +9,13 @@ from __future__ import annotations
 
 import random
 
+__all__ = [
+    "PAYLOADS",
+    "SINK_ADDRESS",
+    "new_canary",
+    "render",
+]
+
 SINK_ADDRESS = "audit@chaos.invalid"
 
 PAYLOADS: dict[str, str] = {

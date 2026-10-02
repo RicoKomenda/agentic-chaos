@@ -19,6 +19,20 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+__all__ = [
+    "Event",
+    "InjectionContext",
+    "POINTS",
+    "Session",
+    "Trace",
+    "bound",
+    "current",
+    "intercept",
+    "iter_strings",
+    "record",
+    "suspended",
+]
+
 if TYPE_CHECKING:
     from agentic_chaos.faults import Fault
 

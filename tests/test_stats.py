@@ -107,7 +107,7 @@ def test_loader_reads_thresholds(tmp_path):
 
     path = tmp_path / "e.yaml"
     path.write_text(
-        "apiVersion: agentic-chaos/v1alpha1\nkind: Experiment\nmetadata: {name: t}\n"
+        "apiVersion: agentic-chaos/v1\nkind: Experiment\nmetadata: {name: t}\n"
         "spec:\n  target: {entrypoint: 'tests.test_stats:flaky_target'}\n  runs: 5\n  confidence: 0.9\n"
         "  require_confidence: true\n  pass_rate: 0.8\n  faults: [{type: empty, target: coin}]\n"
         "  probes:\n    - {type: output_contains, params: {text: ok}, min_pass_rate: 0.5}\n"

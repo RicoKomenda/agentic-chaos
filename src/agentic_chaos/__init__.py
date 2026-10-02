@@ -1,15 +1,16 @@
 """Agentic Chaos - security chaos engineering for AI agents and LLM applications."""
 
 from agentic_chaos import ap2, faults, probes
-from agentic_chaos.experiment import Experiment, ExperimentResult, Verdict
+from agentic_chaos.experiment import Experiment, ExperimentResult, ProbeStats, Verdict
 from agentic_chaos.inject import agent, control, describe_tool, discover_agent, llm, memory, output, payment, tool
-from agentic_chaos.runtime import intercept
+from agentic_chaos.runtime import intercept, suspended
 
 __version__ = "0.1.0.dev0"
 
 __all__ = [
     "Experiment",
     "ExperimentResult",
+    "ProbeStats",
     "Verdict",
     "ap2",
     "agent",
@@ -23,5 +24,6 @@ __all__ = [
     "output",
     "payment",
     "probes",
+    "suspended",
     "tool",
 ]

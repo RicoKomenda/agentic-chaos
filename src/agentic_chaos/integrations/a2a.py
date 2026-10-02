@@ -27,11 +27,18 @@ import re
 from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from agentic_chaos import sse
+from agentic_chaos import _sse as sse
 from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Repeat
 from agentic_chaos.runtime import intercept, record
+
+__all__ = [
+    "A2AChaosTransport",
+    "AsyncA2AChaosTransport",
+    "V1_METHODS",
+    "build",
+]
 
 CARD_PATHS = ("/.well-known/agent-card.json", "/.well-known/agent.json")
 INTERNAL_ERROR = -32603
@@ -73,7 +80,11 @@ class _Call:
         return {**data, "result": payload} if self.binding == "jsonrpc" else payload
 
 
-def build(httpx: ModuleType) -> tuple[type, type]:
+if TYPE_CHECKING:
+    import httpx
+
+
+def build(http: ModuleType) -> tuple[type, type]:
     """Build the A2A transports for an httpx-compatible module (``httpx`` or ``httpx2``)."""
 
     def _call(request: httpx.Request) -> _Call | None:
@@ -110,18 +121,18 @@ def build(httpx: ModuleType) -> tuple[type, type]:
                 record("agent.call", host, method=call.method, params=call.params, duplicate=True)
             return None, repeat.times
         except ChaosTimeout as exc:
-            raise httpx.ReadTimeout(str(exc), request=request) from exc
+            raise http.ReadTimeout(str(exc), request=request) from exc
         except ChaosAuthError as exc:
             headers = {"www-authenticate": exc.www_authenticate()}
             body = {"error": exc.error, "error_description": exc.description}
-            return httpx.Response(exc.status, headers=headers, json=body, request=request), 0
+            return http.Response(exc.status, headers=headers, json=body, request=request), 0
         except ChaosRateLimit as exc:
-            return httpx.Response(429, json={"error": str(exc)}, request=request), 0
+            return http.Response(429, json={"error": str(exc)}, request=request), 0
         except ChaosError as exc:
             if call.binding == "rest":
-                return httpx.Response(500, json={"error": {"code": 500, "message": str(exc)}}, request=request), 0
+                return http.Response(500, json={"error": {"code": 500, "message": str(exc)}}, request=request), 0
             error = {"code": INTERNAL_ERROR, "message": str(exc)}
-            return httpx.Response(200, json={"jsonrpc": "2.0", "id": call.rpc_id, "error": error}, request=request), 0
+            return http.Response(200, json={"jsonrpc": "2.0", "id": call.rpc_id, "error": error}, request=request), 0
         return None, 0
 
     def _is_stream(request: httpx.Request, response: httpx.Response) -> bool:
@@ -147,11 +158,11 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             try:
                 return sse.transform_json(event, fn).encode()
             except ChaosTimeout as exc:
-                raise httpx.ReadTimeout(str(exc), request=request) from exc
+                raise http.ReadTimeout(str(exc), request=request) from exc
 
         return apply
 
-    class _SSEStream(httpx.SyncByteStream):
+    class _SSEStream(http.SyncByteStream):  # type: ignore[misc,name-defined]
         def __init__(self, inner: httpx.SyncByteStream, apply: Callable[[sse.Event], bytes]) -> None:
             self.inner = inner
             self.apply = apply
@@ -167,7 +178,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         def close(self) -> None:
             self.inner.close()
 
-    class _AsyncSSEStream(httpx.AsyncByteStream):
+    class _AsyncSSEStream(http.AsyncByteStream):  # type: ignore[misc,name-defined]
         def __init__(self, inner: httpx.AsyncByteStream, apply: Callable[[sse.Event], bytes]) -> None:
             self.inner = inner
             self.apply = apply
@@ -185,7 +196,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
 
     def _streamed(request: httpx.Request, response: httpx.Response, stream: Any) -> httpx.Response:
         headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
-        return httpx.Response(response.status_code, headers=headers, stream=stream, request=request)
+        return http.Response(response.status_code, headers=headers, stream=stream, request=request)
 
     def _after(request: httpx.Request, response: httpx.Response, body: bytes) -> httpx.Response:
         host = request.url.host
@@ -208,7 +219,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             try:
                 payload = _map_text(payload, lambda text: intercept("agent.message", host, text))
             except ChaosTimeout as exc:
-                raise httpx.ReadTimeout(str(exc), request=request) from exc
+                raise http.ReadTimeout(str(exc), request=request) from exc
             record("agent.call.result", host, result=payload)
             data = call.with_payload(data, payload)
         return _rebuild(request, response, json.dumps(data).encode())
@@ -225,11 +236,11 @@ def build(httpx: ModuleType) -> tuple[type, type]:
 
     def _rebuild(request: httpx.Request, response: httpx.Response, body: bytes) -> httpx.Response:
         headers = {k: v for k, v in response.headers.items() if k.lower() not in ("content-length", "content-encoding")}
-        return httpx.Response(response.status_code, headers=headers, content=body, request=request)
+        return http.Response(response.status_code, headers=headers, content=body, request=request)
 
-    class A2AChaosTransport(httpx.BaseTransport):
+    class A2AChaosTransport(http.BaseTransport):  # type: ignore[misc,name-defined]
         def __init__(self, wrapped: httpx.BaseTransport | None = None) -> None:
-            self.wrapped = wrapped or httpx.HTTPTransport()
+            self.wrapped = wrapped or http.HTTPTransport()
 
         def handle_request(self, request: httpx.Request) -> httpx.Response:
             short_circuit, extra = _before(request)
@@ -246,9 +257,9 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         def close(self) -> None:
             self.wrapped.close()
 
-    class AsyncA2AChaosTransport(httpx.AsyncBaseTransport):
+    class AsyncA2AChaosTransport(http.AsyncBaseTransport):  # type: ignore[misc,name-defined]
         def __init__(self, wrapped: httpx.AsyncBaseTransport | None = None) -> None:
-            self.wrapped = wrapped or httpx.AsyncHTTPTransport()
+            self.wrapped = wrapped or http.AsyncHTTPTransport()
 
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
             short_circuit, extra = _before(request)

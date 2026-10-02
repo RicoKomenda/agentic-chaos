@@ -14,6 +14,38 @@ from typing import Any
 
 from agentic_chaos.runtime import Trace, iter_strings
 
+__all__ = [
+    "PROBES",
+    "Probe",
+    "ProbeResult",
+    "SINK_KINDS",
+    "agent_not_contacted",
+    "alert_raised",
+    "blast_radius",
+    "build",
+    "canary_not_leaked",
+    "completes_within",
+    "cost_within",
+    "custom",
+    "elicitation_not_accepted",
+    "expect",
+    "fails_closed",
+    "judge",
+    "max_agent_calls",
+    "max_events",
+    "max_llm_calls",
+    "max_tool_calls",
+    "no_call_after_tool_change",
+    "no_unhandled_error",
+    "not_refused",
+    "output_contains",
+    "output_matches",
+    "output_not_contains",
+    "tokens_within",
+    "tool_called",
+    "tool_not_called",
+]
+
 PROBES: dict[str, Callable[..., Probe]] = {}
 
 
@@ -408,7 +440,7 @@ def expect(probe: Probe, min_pass_rate: float) -> Probe:
 
 def custom(fn: Callable[[Trace], bool], name: str | None = None) -> Probe:
     def probe(trace: Trace) -> ProbeResult:
-        return ProbeResult(name or getattr(fn, "__name__", "custom"), bool(fn(trace)))
+        return ProbeResult(name or str(getattr(fn, "__name__", "custom")), bool(fn(trace)))
 
     return probe
 

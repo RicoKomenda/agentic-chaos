@@ -25,11 +25,18 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator, Callable, Iterator
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from agentic_chaos import sse
+from agentic_chaos import _sse as sse
 from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout, Repeat
 from agentic_chaos.runtime import intercept, record
+
+__all__ = [
+    "AsyncChaosTransport",
+    "ChaosTransport",
+    "build",
+    "map_text",
+]
 
 TEXT_KEYS = ("content", "text")
 
@@ -43,7 +50,11 @@ def map_text(value: Any, fn: Callable[[str], Any], keys: tuple[str, ...] = TEXT_
     return value
 
 
-def build(httpx: ModuleType) -> tuple[type, type]:
+if TYPE_CHECKING:
+    import httpx
+
+
+def build(http: ModuleType) -> tuple[type, type]:
     """Build the provider transports for an httpx-compatible module (``httpx`` or ``httpx2``)."""
 
     def _before(request: httpx.Request) -> tuple[httpx.Response | None, int]:
@@ -54,18 +65,18 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         except Repeat as repeat:
             return None, repeat.times
         except ChaosTimeout as exc:
-            raise httpx.ReadTimeout(str(exc), request=request) from exc
+            raise http.ReadTimeout(str(exc), request=request) from exc
         except ChaosAuthError as exc:
             headers = {"www-authenticate": exc.www_authenticate()}
             error = {"error": {"type": "authentication_error", "message": str(exc)}}
-            return httpx.Response(exc.status, headers=headers, json=error, request=request), 0
+            return http.Response(exc.status, headers=headers, json=error, request=request), 0
         except ChaosRateLimit as exc:
             headers = {"retry-after": str(exc.retry_after)} if exc.retry_after is not None else {}
             error = {"error": {"type": "rate_limit_error", "message": str(exc)}}
-            return httpx.Response(429, headers=headers, json=error, request=request), 0
+            return http.Response(429, headers=headers, json=error, request=request), 0
         except ChaosError as exc:
             error = {"error": {"type": "api_error", "message": str(exc)}}
-            return httpx.Response(500, json=error, request=request), 0
+            return http.Response(500, json=error, request=request), 0
         return None, 0
 
     def _headers(response: httpx.Response) -> dict[str, str]:
@@ -77,7 +88,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             try:
                 return intercept("llm.response", host, text)
             except ChaosTimeout as exc:
-                raise httpx.ReadTimeout(str(exc), request=request) from exc
+                raise http.ReadTimeout(str(exc), request=request) from exc
 
         return fn
 
@@ -87,17 +98,17 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             text = body.decode("utf-8", errors="replace")
             mutated = intercept("llm.response", host, text) if mode == "raw" else text
             if mutated == text:
-                return httpx.Response(response.status_code, headers=_headers(response), content=body, request=request)
+                return http.Response(response.status_code, headers=_headers(response), content=body, request=request)
             content = (mutated or "").encode()
-            return httpx.Response(response.status_code, headers=_headers(response), content=content, request=request)
+            return http.Response(response.status_code, headers=_headers(response), content=content, request=request)
         try:
             data = json.loads(body)
         except ValueError:
-            return httpx.Response(response.status_code, headers=_headers(response), content=body, request=request)
+            return http.Response(response.status_code, headers=_headers(response), content=body, request=request)
         data = map_text(data, _text_fn(host, request))
         record("llm.response", host, body=data)
         content = json.dumps(data).encode()
-        return httpx.Response(response.status_code, headers=_headers(response), content=content, request=request)
+        return http.Response(response.status_code, headers=_headers(response), content=content, request=request)
 
     def _is_stream(response: httpx.Response, mode: str) -> bool:
         content_type = response.headers.get("content-type", "")
@@ -107,7 +118,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         fn = _text_fn(host, request)
         return lambda event: sse.transform_json(event, lambda data: map_text(data, fn)).encode()
 
-    class _SSEStream(httpx.SyncByteStream):
+    class _SSEStream(http.SyncByteStream):  # type: ignore[misc,name-defined]
         def __init__(self, inner: Any, apply: Callable[[sse.Event], bytes]) -> None:
             self.inner, self.apply = inner, apply
 
@@ -120,7 +131,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         def close(self) -> None:
             self.inner.close()
 
-    class _AsyncSSEStream(httpx.AsyncByteStream):
+    class _AsyncSSEStream(http.AsyncByteStream):  # type: ignore[misc,name-defined]
         def __init__(self, inner: Any, apply: Callable[[sse.Event], bytes]) -> None:
             self.inner, self.apply = inner, apply
 
@@ -135,11 +146,11 @@ def build(httpx: ModuleType) -> tuple[type, type]:
         async def aclose(self) -> None:
             await self.inner.aclose()
 
-    class ChaosTransport(httpx.BaseTransport):
+    class ChaosTransport(http.BaseTransport):  # type: ignore[misc,name-defined]
         def __init__(self, wrapped: httpx.BaseTransport | None = None, *, mode: str = "text") -> None:
             if mode not in ("text", "raw"):
                 raise ValueError("mode must be 'text' or 'raw'")
-            self.wrapped = wrapped or httpx.HTTPTransport()
+            self.wrapped = wrapped or http.HTTPTransport()
             self.mode = mode
 
         def handle_request(self, request: httpx.Request) -> httpx.Response:
@@ -151,17 +162,17 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             response = self.wrapped.handle_request(request)
             if _is_stream(response, self.mode):
                 stream = _SSEStream(response.stream, _event_fn(request.url.host, request))
-                return httpx.Response(response.status_code, headers=_headers(response), stream=stream, request=request)
+                return http.Response(response.status_code, headers=_headers(response), stream=stream, request=request)
             return _after(request, response, response.read(), self.mode)
 
         def close(self) -> None:
             self.wrapped.close()
 
-    class AsyncChaosTransport(httpx.AsyncBaseTransport):
+    class AsyncChaosTransport(http.AsyncBaseTransport):  # type: ignore[misc,name-defined]
         def __init__(self, wrapped: httpx.AsyncBaseTransport | None = None, *, mode: str = "text") -> None:
             if mode not in ("text", "raw"):
                 raise ValueError("mode must be 'text' or 'raw'")
-            self.wrapped = wrapped or httpx.AsyncHTTPTransport()
+            self.wrapped = wrapped or http.AsyncHTTPTransport()
             self.mode = mode
 
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
@@ -173,7 +184,7 @@ def build(httpx: ModuleType) -> tuple[type, type]:
             response = await self.wrapped.handle_async_request(request)
             if _is_stream(response, self.mode):
                 stream = _AsyncSSEStream(response.stream, _event_fn(request.url.host, request))
-                return httpx.Response(response.status_code, headers=_headers(response), stream=stream, request=request)
+                return http.Response(response.status_code, headers=_headers(response), stream=stream, request=request)
             return _after(request, response, await response.aread(), self.mode)
 
         async def aclose(self) -> None:

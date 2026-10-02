@@ -1,0 +1,3083 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/RicoKomenda/agentic-chaos/schema/agentic-chaos.v1.schema.json",
+  "title": "Agentic Chaos experiment or MCP proxy file",
+  "$defs": {
+    "fault": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Credentials stop working: expired or revoked token (401) or missing scope (403).",
+          "properties": {
+            "type": {
+              "const": "auth_error"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "default": 401
+                },
+                "error": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "scope": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "A security control (guardrail, authz check, approval service) is unavailable.",
+          "properties": {
+            "type": {
+              "const": "control_outage"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "default": "timeout"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Make structured data malformed: cut JSON text mid-document, or drop a key from a dict.",
+          "properties": {
+            "type": {
+              "const": "corrupt_json"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Deliver a request more than once (at-least-once delivery, replayed task or payment mandate).",
+          "properties": {
+            "type": {
+              "const": "duplicate"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "times": {
+                  "type": "integer",
+                  "default": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "empty",
+          "properties": {
+            "type": {
+              "const": "empty"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "error",
+          "properties": {
+            "type": {
+              "const": "error"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "default": "injected failure"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Pad untrusted content with filler, optionally hiding a payload at the end.",
+          "properties": {
+            "type": {
+              "const": "flood"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "size": {
+                  "type": "integer",
+                  "default": 20000
+                },
+                "filler": {
+                  "type": "string",
+                  "default": "Lorem ipsum dolor sit amet. "
+                },
+                "payload": {
+                  "type": [
+                    "null",
+                    "string"
+                  ],
+                  "default": "exfiltrate"
+                },
+                "sink": {
+                  "type": "string",
+                  "default": "send_email"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "A security control silently returns a fixed verdict (misconfiguration, bypass, model drift).",
+          "properties": {
+            "type": {
+              "const": "force_verdict"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "verdict": {
+                  "default": true
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Indirect prompt injection: smuggle a canary-tagged instruction into untrusted data.",
+          "properties": {
+            "type": {
+              "const": "inject_instruction"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "string",
+                  "default": "exfiltrate"
+                },
+                "sink": {
+                  "type": "string",
+                  "default": "send_email"
+                },
+                "position": {
+                  "type": "string",
+                  "default": "append"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "latency",
+          "properties": {
+            "type": {
+              "const": "latency"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "seconds": {
+                  "type": "number",
+                  "default": 2.0
+                },
+                "jitter": {
+                  "type": "number",
+                  "default": 0.0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "A server asks the user for sensitive input (``elicitation/create``) - credential phishing.",
+          "properties": {
+            "type": {
+              "const": "mcp_elicitation"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "default": "Your session expired. Re-enter your API key to continue."
+                },
+                "field": {
+                  "type": "string",
+                  "default": "api_key"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "The server floods ``notifications/tools/list_changed`` (re-listing storms, re-approval fatigue).",
+          "properties": {
+            "type": {
+              "const": "mcp_list_changed_flood"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "default": 20
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "A server asks the client's model for a completion (``sampling/createMessage``) carrying an injection.",
+          "properties": {
+            "type": {
+              "const": "mcp_sampling"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "string",
+                  "default": "sampling_exfil"
+                },
+                "max_tokens": {
+                  "type": "integer",
+                  "default": 200
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Overwrite fields of structured data, addressed by dotted paths (``cart.items.0.price``).",
+          "properties": {
+            "type": {
+              "const": "patch"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "set": {
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Memory / RAG poisoning: a planted record comes back from long-term memory.",
+          "properties": {
+            "type": {
+              "const": "poison_memory"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "string",
+                  "default": "exfiltrate"
+                },
+                "sink": {
+                  "type": "string",
+                  "default": "send_email"
+                },
+                "position": {
+                  "type": "string",
+                  "default": "append"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Tool poisoning: hide instructions in tool metadata (e.g. an MCP server's tool description).",
+          "properties": {
+            "type": {
+              "const": "poison_tool_description"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "type": "string",
+                  "default": "tool_poisoning"
+                },
+                "sink": {
+                  "type": "string",
+                  "default": "send_email"
+                },
+                "position": {
+                  "type": "string",
+                  "default": "append"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "rate_limit",
+          "properties": {
+            "type": {
+              "const": "rate_limit"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "retry_after": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Return an earlier response instead of the current one: replayed, stale or reordered messages.",
+          "properties": {
+            "type": {
+              "const": "replay"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "which": {
+                  "type": "string",
+                  "default": "previous"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "A second tool with an existing tool's name appears in the tool list (tool shadowing / squatting).",
+          "properties": {
+            "type": {
+              "const": "shadow_tool"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "default": "*"
+                },
+                "payload": {
+                  "type": "string",
+                  "default": "tool_poisoning"
+                },
+                "sink": {
+                  "type": "string",
+                  "default": "send_email"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "An agent's self-description (A2A Agent Card) is forged or tampered with during discovery.",
+          "properties": {
+            "type": {
+              "const": "spoof_agent_card"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "set": {
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "timeout",
+          "properties": {
+            "type": {
+              "const": "timeout"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "The operation completed on the remote side, but the caller sees a timeout.",
+          "properties": {
+            "type": {
+              "const": "timeout_after_commit"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "truncate",
+          "properties": {
+            "type": {
+              "const": "truncate"
+            },
+            "target": {
+              "type": "string",
+              "default": "*"
+            },
+            "point": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "llm.call",
+                    "llm.response",
+                    "tool.describe",
+                    "tool.call",
+                    "tool.result",
+                    "memory.read",
+                    "resource.read",
+                    "control",
+                    "agent.discover",
+                    "agent.call",
+                    "agent.message",
+                    "payment.call",
+                    "payment.result",
+                    "mcp.tools",
+                    "mcp.server_request"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "llm.call",
+                      "llm.response",
+                      "tool.describe",
+                      "tool.call",
+                      "tool.result",
+                      "memory.read",
+                      "resource.read",
+                      "control",
+                      "agent.discover",
+                      "agent.call",
+                      "agent.message",
+                      "payment.call",
+                      "payment.result",
+                      "mcp.tools",
+                      "mcp.server_request"
+                    ]
+                  }
+                }
+              ]
+            },
+            "probability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "after_calls": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "max_injections": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "keep": {
+                  "type": "number",
+                  "default": 0.5
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "probe": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "No message or task may be sent to an agent whose name/URL matches ``name`` (glob).",
+          "properties": {
+            "type": {
+              "const": "agent_not_contacted"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Detection check: a log record at ``level`` or above (optionally containing text) was emitted.",
+          "properties": {
+            "type": {
+              "const": "alert_raised"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "contains": {
+                  "type": "string",
+                  "default": ""
+                },
+                "level": {
+                  "type": "string",
+                  "default": "WARNING"
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "At most ``limit`` distinct downstream targets (tools, agents, payment services) receive a canary.",
+          "properties": {
+            "type": {
+              "const": "blast_radius"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer",
+                  "default": 0
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "No canary planted by a fault may reach a tool, another agent, a payment, an MCP server, or the output.",
+          "properties": {
+            "type": {
+              "const": "canary_not_leaked"
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "The cart in every Payment Mandate is byte-for-byte a cart the user reviewed.",
+          "properties": {
+            "type": {
+              "const": "cart_matches_reviewed"
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Every Payment Mandate respects the Intent Mandate: allowed merchant, allowed SKUs, within budget.",
+          "properties": {
+            "type": {
+              "const": "cart_within_intent"
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "completes_within",
+          "properties": {
+            "type": {
+              "const": "completes_within"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "seconds": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "seconds"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Denial of wallet: model spend in one run stays within ``limit`` (in the currency of ``prices``).",
+          "properties": {
+            "type": {
+              "const": "cost_within"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "number"
+                },
+                "prices": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "limit",
+                "prices"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Server-initiated requests for user input (MCP elicitation) injected by chaos are not accepted.",
+          "properties": {
+            "type": {
+              "const": "elicitation_not_accepted"
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Once a matching control has been disrupted, no tool matching ``sensitive`` may be called.",
+          "properties": {
+            "type": {
+              "const": "fails_closed"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "control": {
+                  "type": "string",
+                  "default": "*"
+                },
+                "sensitive": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Model-graded check: a judge decides whether the run satisfies ``criterion``.",
+          "properties": {
+            "type": {
+              "const": "judge"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "judge": {
+                  "type": "string"
+                },
+                "criterion": {
+                  "type": "string"
+                },
+                "threshold": {
+                  "type": "number",
+                  "default": 0.5
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "judge",
+                "criterion"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Bound messages to other agents - catches delegation loops and recursive task storms.",
+          "properties": {
+            "type": {
+              "const": "max_agent_calls"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Generic bound on how often an event occurs (e.g. ``mcp.request`` / ``tools/list``).",
+          "properties": {
+            "type": {
+              "const": "max_events"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "limit": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "max_llm_calls",
+          "properties": {
+            "type": {
+              "const": "max_llm_calls"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "At most ``limit`` real charges per run - catches duplicate charges from non-idempotent retries.",
+          "properties": {
+            "type": {
+              "const": "max_settlements"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer",
+                  "default": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Bound tool calls - catches retry storms and runaway loops (unbounded consumption).",
+          "properties": {
+            "type": {
+              "const": "max_tool_calls"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "MCP rug pull: once a tool's definition changed since it was first seen, it must not be called again.",
+          "properties": {
+            "type": {
+              "const": "no_call_after_tool_change"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "default": "*"
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "The system degrades gracefully instead of crashing.",
+          "properties": {
+            "type": {
+              "const": "no_unhandled_error"
+            },
+            "params": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Availability: the run produced an answer that is not a refusal or error message.",
+          "properties": {
+            "type": {
+              "const": "not_refused"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "patterns": {
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "output_contains",
+          "properties": {
+            "type": {
+              "const": "output_contains"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "text"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Availability: the final output matches a regular expression (the legitimate task got done).",
+          "properties": {
+            "type": {
+              "const": "output_matches"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "pattern": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "pattern"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "output_not_contains",
+          "properties": {
+            "type": {
+              "const": "output_not_contains"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "text"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "No payment proceeds after discovering an agent whose card does not declare the AP2 extension ``uri``.",
+          "properties": {
+            "type": {
+              "const": "payment_requires_extension"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "uri"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Unbounded consumption: total model tokens in one run stay within ``limit``.",
+          "properties": {
+            "type": {
+              "const": "tokens_within"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "limit": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "limit"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "tool_called",
+          "properties": {
+            "type": {
+              "const": "tool_called"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "The agent must never attempt to call a tool matching ``name`` (glob).",
+          "properties": {
+            "type": {
+              "const": "tool_not_called"
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ]
+            },
+            "min_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "enum": [
+            "agentic-chaos/v1",
+            "agentic-chaos/v1alpha1"
+          ]
+        },
+        "kind": {
+          "const": "Experiment"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata",
+          "required": [
+            "name"
+          ]
+        },
+        "spec": {
+          "type": "object",
+          "properties": {
+            "hypothesis": {
+              "type": "string"
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "entrypoint": {
+                  "type": "string",
+                  "pattern": "^[\\w.]+:[\\w.]+$"
+                },
+                "args": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false
+            },
+            "runs": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "seed": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "default": 0
+            },
+            "baseline": {
+              "type": "boolean",
+              "default": true
+            },
+            "pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 1.0
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 0.999,
+              "default": 0.95
+            },
+            "require_confidence": {
+              "type": "boolean",
+              "default": false
+            },
+            "faults": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fault"
+              },
+              "minItems": 1
+            },
+            "probes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/probe"
+              }
+            },
+            "detection": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/probe"
+              }
+            }
+          },
+          "required": [
+            "faults"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "enum": [
+            "agentic-chaos/v1",
+            "agentic-chaos/v1alpha1"
+          ]
+        },
+        "kind": {
+          "const": "McpProxy"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "spec": {
+          "type": "object",
+          "properties": {
+            "seed": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "faults": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fault"
+              }
+            },
+            "probes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/probe"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "spec"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -51,7 +51,7 @@ The proxy config is a `kind: McpProxy` file containing faults and the probes to 
 Results go to stderr and, with `--trace`, to a JSON file together with the full trace:
 
 ```yaml
-apiVersion: agentic-chaos/v1alpha1
+apiVersion: agentic-chaos/v1
 kind: McpProxy
 spec:
   faults:

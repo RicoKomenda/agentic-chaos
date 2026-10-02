@@ -32,6 +32,12 @@ from typing import Any
 
 from agentic_chaos.mcp.core import McpChaosCore
 
+__all__ = [
+    "Endpoint",
+    "McpChaosProxy",
+    "StdioEndpoint",
+]
+
 
 class Endpoint:
     """In-memory duplex connection between an in-process MCP client and the proxy."""
@@ -73,7 +79,8 @@ class StdioEndpoint:
             if not line:
                 return None
             if line.strip():
-                return json.loads(line)
+                message: dict[str, Any] = json.loads(line)
+                return message
 
     async def write(self, message: dict[str, Any] | None) -> None:
         if message is not None:
@@ -117,7 +124,9 @@ class McpChaosProxy:
         await asyncio.gather(self._client_task, self._server_task, return_exceptions=True)
 
     async def __aenter__(self) -> Endpoint:
-        return await self.start()
+        endpoint = await self.start()
+        assert isinstance(endpoint, Endpoint)
+        return endpoint
 
     async def __aexit__(self, *exc: object) -> None:
         if isinstance(self.downstream, Endpoint):

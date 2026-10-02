@@ -16,6 +16,41 @@ from typing import Any, ClassVar
 from agentic_chaos import payloads
 from agentic_chaos.runtime import POINTS, InjectionContext
 
+__all__ = [
+    "AuthError",
+    "ChaosAuthError",
+    "ChaosError",
+    "ChaosRateLimit",
+    "ChaosTimeout",
+    "ControlOutage",
+    "CorruptJSON",
+    "Duplicate",
+    "Empty",
+    "Error",
+    "FAULTS",
+    "Fault",
+    "Flood",
+    "ForceVerdict",
+    "InjectInstruction",
+    "Latency",
+    "McpElicitation",
+    "McpListChangedFlood",
+    "McpSampling",
+    "Override",
+    "Patch",
+    "PoisonMemory",
+    "PoisonToolDescription",
+    "RateLimit",
+    "Repeat",
+    "Replay",
+    "ShadowTool",
+    "SpoofAgentCard",
+    "Timeout",
+    "TimeoutAfterCommit",
+    "Truncate",
+    "build",
+]
+
 FAULTS: dict[str, type[Fault]] = {}
 
 
@@ -123,8 +158,15 @@ class Fault:
 
 class Latency(Fault):
     kind = "latency"
-    points = ("llm.call", "tool.call", "memory.read", "control", "agent.call", "payment.call")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = (
+        "llm.call",
+        "tool.call",
+        "memory.read",
+        "control",
+        "agent.call",
+        "payment.call",
+    )
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def __init__(self, target: str = "*", *, seconds: float = 2.0, jitter: float = 0.0, **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -138,8 +180,15 @@ class Latency(Fault):
 
 class Timeout(Fault):
     kind = "timeout"
-    points = ("llm.call", "tool.call", "memory.read", "control", "agent.call", "payment.call")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = (
+        "llm.call",
+        "tool.call",
+        "memory.read",
+        "control",
+        "agent.call",
+        "payment.call",
+    )
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         raise ChaosTimeout(f"{ctx.point} {ctx.name} timed out (injected)")
@@ -147,8 +196,15 @@ class Timeout(Fault):
 
 class Error(Fault):
     kind = "error"
-    points = ("llm.call", "tool.call", "memory.read", "control", "agent.call", "payment.call")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = (
+        "llm.call",
+        "tool.call",
+        "memory.read",
+        "control",
+        "agent.call",
+        "payment.call",
+    )
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def __init__(self, target: str = "*", *, message: str = "injected failure", **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -160,8 +216,8 @@ class Error(Fault):
 
 class RateLimit(Fault):
     kind = "rate_limit"
-    points = ("llm.call", "tool.call", "agent.call", "payment.call")
-    maps_to = ("ASI08", "LLM10")
+    points: ClassVar[tuple[str, ...]] = ("llm.call", "tool.call", "agent.call", "payment.call")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08", "LLM10")
 
     def __init__(self, target: str = "*", *, retry_after: float | None = None, **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -173,8 +229,8 @@ class RateLimit(Fault):
 
 class Empty(Fault):
     kind = "empty"
-    points = ("llm.response", "tool.result", "memory.read", "resource.read", "agent.message")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = ("llm.response", "tool.result", "memory.read", "resource.read", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         return type(value)() if isinstance(value, (str, bytes, list, dict, tuple)) else None
@@ -182,8 +238,8 @@ class Empty(Fault):
 
 class Truncate(Fault):
     kind = "truncate"
-    points = ("llm.response", "tool.result", "memory.read", "resource.read", "agent.message")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = ("llm.response", "tool.result", "memory.read", "resource.read", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def __init__(self, target: str = "*", *, keep: float = 0.5, **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -199,8 +255,8 @@ class CorruptJSON(Fault):
     """Make structured data malformed: cut JSON text mid-document, or drop a key from a dict."""
 
     kind = "corrupt_json"
-    points = ("llm.response", "tool.result", "agent.message")
-    maps_to = ("ASI08", "LLM05")
+    points: ClassVar[tuple[str, ...]] = ("llm.response", "tool.result", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08", "LLM05")
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         if isinstance(value, str) and len(value) > 1:
@@ -220,8 +276,8 @@ class InjectInstruction(Fault):
 
     kind = "inject_instruction"
     category = "security"
-    points = ("tool.result", "memory.read", "resource.read", "agent.message")
-    maps_to = ("ASI01", "ASI02", "LLM01")
+    points: ClassVar[tuple[str, ...]] = ("tool.result", "memory.read", "resource.read", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI01", "ASI02", "LLM01")
 
     def __init__(
         self,
@@ -249,8 +305,8 @@ class PoisonToolDescription(InjectInstruction):
     """Tool poisoning: hide instructions in tool metadata (e.g. an MCP server's tool description)."""
 
     kind = "poison_tool_description"
-    points = ("tool.describe",)
-    maps_to = ("ASI02", "ASI04", "LLM03")
+    points: ClassVar[tuple[str, ...]] = ("tool.describe",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI02", "ASI04", "LLM03")
 
     def __init__(self, target: str = "*", *, payload: str = "tool_poisoning", **kw: Any) -> None:
         super().__init__(target, payload=payload, **kw)
@@ -260,8 +316,8 @@ class PoisonMemory(InjectInstruction):
     """Memory / RAG poisoning: a planted record comes back from long-term memory."""
 
     kind = "poison_memory"
-    points = ("memory.read",)
-    maps_to = ("ASI06", "LLM04", "LLM08")
+    points: ClassVar[tuple[str, ...]] = ("memory.read",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI06", "LLM04", "LLM08")
 
 
 class ControlOutage(Fault):
@@ -269,8 +325,8 @@ class ControlOutage(Fault):
 
     kind = "control_outage"
     category = "security"
-    points = ("control",)
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = ("control",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def __init__(self, target: str = "*", *, mode: str = "timeout", **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -292,8 +348,8 @@ class ForceVerdict(Fault):
 
     kind = "force_verdict"
     category = "security"
-    points = ("control",)
-    maps_to = ("ASI03", "ASI08")
+    points: ClassVar[tuple[str, ...]] = ("control",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI03", "ASI08")
 
     def __init__(self, target: str = "*", *, verdict: Any = True, **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -312,8 +368,8 @@ class Flood(Fault):
 
     kind = "flood"
     category = "security"
-    points = ("tool.result", "memory.read", "resource.read", "agent.message")
-    maps_to = ("ASI01", "LLM01", "LLM10")
+    points: ClassVar[tuple[str, ...]] = ("tool.result", "memory.read", "resource.read", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI01", "LLM01", "LLM10")
 
     def __init__(
         self,
@@ -349,8 +405,15 @@ class Patch(Fault):
 
     kind = "patch"
     category = "security"
-    points = ("agent.discover", "agent.message", "tool.result", "memory.read", "resource.read", "payment.result")
-    maps_to = ("ASI04", "ASI07")
+    points: ClassVar[tuple[str, ...]] = (
+        "agent.discover",
+        "agent.message",
+        "tool.result",
+        "memory.read",
+        "resource.read",
+        "payment.result",
+    )
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI04", "ASI07")
 
     def __init__(self, target: str = "*", *, set: dict[str, Any] | None = None, **kw: Any) -> None:  # noqa: A002
         super().__init__(target, **kw)
@@ -369,8 +432,8 @@ class SpoofAgentCard(Patch):
     """An agent's self-description (A2A Agent Card) is forged or tampered with during discovery."""
 
     kind = "spoof_agent_card"
-    points = ("agent.discover",)
-    maps_to = ("ASI04", "ASI07", "ASI10")
+    points: ClassVar[tuple[str, ...]] = ("agent.discover",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI04", "ASI07", "ASI10")
 
 
 class TimeoutAfterCommit(Fault):
@@ -380,8 +443,8 @@ class TimeoutAfterCommit(Fault):
     """
 
     kind = "timeout_after_commit"
-    points = ("tool.result", "payment.result", "agent.message")
-    maps_to = ("ASI08",)
+    points: ClassVar[tuple[str, ...]] = ("tool.result", "payment.result", "agent.message")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08",)
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
         raise ChaosTimeout(f"{ctx.name} timed out after the operation was committed (injected)")
@@ -392,8 +455,8 @@ class AuthError(Fault):
 
     kind = "auth_error"
     category = "security"
-    points = ("tool.call", "agent.call", "llm.call", "payment.call")
-    maps_to = ("ASI03",)
+    points: ClassVar[tuple[str, ...]] = ("tool.call", "agent.call", "llm.call", "payment.call")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI03",)
 
     def __init__(
         self, target: str = "*", *, status: int = 401, error: str | None = None, scope: str | None = None, **kw: Any
@@ -420,8 +483,15 @@ class Replay(Fault):
 
     kind = "replay"
     category = "security"
-    points = ("agent.message", "tool.result", "memory.read", "resource.read", "llm.response", "payment.result")
-    maps_to = ("ASI07",)
+    points: ClassVar[tuple[str, ...]] = (
+        "agent.message",
+        "tool.result",
+        "memory.read",
+        "resource.read",
+        "llm.response",
+        "payment.result",
+    )
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI07",)
 
     def __init__(self, target: str = "*", *, which: str = "previous", **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -440,8 +510,8 @@ class Duplicate(Fault):
 
     kind = "duplicate"
     category = "security"
-    points = ("tool.call", "agent.call", "payment.call")
-    maps_to = ("ASI07", "ASI08")
+    points: ClassVar[tuple[str, ...]] = ("tool.call", "agent.call", "payment.call")
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI07", "ASI08")
 
     def __init__(self, target: str = "*", *, times: int = 1, **kw: Any) -> None:
         super().__init__(target, **kw)
@@ -459,8 +529,8 @@ class ShadowTool(Fault):
 
     kind = "shadow_tool"
     category = "security"
-    points = ("mcp.tools",)
-    maps_to = ("ASI02", "ASI04")
+    points: ClassVar[tuple[str, ...]] = ("mcp.tools",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI02", "ASI04")
 
     def __init__(
         self,
@@ -492,8 +562,8 @@ class McpSampling(Fault):
 
     kind = "mcp_sampling"
     category = "security"
-    points = ("mcp.server_request",)
-    maps_to = ("ASI01", "ASI02", "LLM01", "LLM10")
+    points: ClassVar[tuple[str, ...]] = ("mcp.server_request",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI01", "ASI02", "LLM01", "LLM10")
 
     def __init__(self, target: str = "*", *, payload: str = "sampling_exfil", max_tokens: int = 200, **kw: Any):
         super().__init__(target, **kw)
@@ -519,8 +589,8 @@ class McpElicitation(Fault):
 
     kind = "mcp_elicitation"
     category = "security"
-    points = ("mcp.server_request",)
-    maps_to = ("ASI09", "ASI03")
+    points: ClassVar[tuple[str, ...]] = ("mcp.server_request",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI09", "ASI03")
 
     def __init__(
         self,
@@ -553,8 +623,8 @@ class McpListChangedFlood(Fault):
     """The server floods ``notifications/tools/list_changed`` (re-listing storms, re-approval fatigue)."""
 
     kind = "mcp_list_changed_flood"
-    points = ("mcp.server_request",)
-    maps_to = ("ASI08", "LLM10")
+    points: ClassVar[tuple[str, ...]] = ("mcp.server_request",)
+    maps_to: ClassVar[tuple[str, ...]] = ("ASI08", "LLM10")
 
     def __init__(self, target: str = "*", *, count: int = 20, **kw: Any) -> None:
         super().__init__(target, **kw)

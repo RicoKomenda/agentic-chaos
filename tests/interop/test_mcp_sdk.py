@@ -47,7 +47,7 @@ def raised(coroutine_fn) -> BaseException:
 
 def write_config(tmp_path, faults_yaml: str) -> str:
     path = tmp_path / "proxy.yaml"
-    path.write_text(f"apiVersion: agentic-chaos/v1alpha1\nkind: McpProxy\nspec:\n  faults:\n{faults_yaml}")
+    path.write_text(f"apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults:\n{faults_yaml}")
     return str(path)
 
 

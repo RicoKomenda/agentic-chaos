@@ -21,6 +21,14 @@ from agentic_chaos.probes import Probe, ProbeResult
 from agentic_chaos.runtime import Session, Trace, bound
 from agentic_chaos.stats import runs_needed, wilson_interval
 
+__all__ = [
+    "Experiment",
+    "ExperimentResult",
+    "ProbeStats",
+    "RunResult",
+    "Verdict",
+]
+
 
 class Verdict(str, Enum):
     HELD = "hypothesis-held"

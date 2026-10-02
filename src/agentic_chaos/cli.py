@@ -7,8 +7,12 @@ import json
 import sys
 from pathlib import Path
 
-from agentic_chaos import __version__, faults, loader, probes
+from agentic_chaos import __version__, faults, loader, probes, schema
 from agentic_chaos.experiment import Verdict
+
+__all__ = [
+    "main",
+]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,6 +42,13 @@ def main(argv: list[str] | None = None) -> int:
     proxy.add_argument("--listen", default="127.0.0.1:8765", help="address for HTTP mode (default 127.0.0.1:8765)")
     proxy.add_argument("server", nargs=argparse.REMAINDER, help="-- followed by the MCP server command (stdio mode)")
 
+    check = sub.add_parser("validate", help="check experiment and proxy files without running them")
+    check.add_argument("files", nargs="+", type=Path, help="files or directories")
+    check.add_argument("--target", help="validate as if --target were passed to run")
+
+    schema_cmd = sub.add_parser("schema", help="print the JSON Schema for experiment files")
+    schema_cmd.add_argument("--output", type=Path, help="write to a file instead of stdout")
+
     sub.add_parser("faults", help="list available faults")
     sub.add_parser("probes", help="list available probes")
 
@@ -53,11 +64,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "mcp-proxy":
-        return _mcp_proxy(args)
+        try:
+            return _mcp_proxy(args)
+        except loader.ValidationError as exc:
+            return _report_invalid(exc)
+    if args.command == "schema":
+        text = json.dumps(schema.json_schema(), indent=2) + "\n"
+        if args.output:
+            args.output.write_text(text)
+        else:
+            sys.stdout.write(text)
+        return 0
+    if args.command == "validate":
+        return _validate(args)
 
     results = []
     for path in loader.expand(args.files):
-        experiment = loader.load(path, entrypoint=args.target, runs=args.runs)
+        try:
+            experiment = loader.load(path, entrypoint=args.target, runs=args.runs)
+        except loader.ValidationError as exc:
+            return _report_invalid(exc)
         result = experiment.run()
         results.append(result)
         print(result.summary(), end="\n\n")
@@ -70,6 +96,29 @@ def main(argv: list[str] | None = None) -> int:
     inconclusive = sum(r.verdict is Verdict.INCONCLUSIVE for r in results)
     print(f"{len(results)} experiment(s): {weaknesses} weakness(es), {inconclusive} inconclusive")
     return 1 if weaknesses else (2 if inconclusive else 0)
+
+
+def _report_invalid(exc: Exception) -> int:
+    print(f"invalid experiment file:\n{exc}", file=sys.stderr)
+    return 2
+
+
+def _validate(args: argparse.Namespace) -> int:
+    paths = [p for f in args.files for p in (sorted(f.rglob("*.yaml")) if f.is_dir() else [f])]
+    invalid = 0
+    for path in paths:
+        try:
+            doc = loader.read(path)
+            if isinstance(doc, dict) and doc.get("kind") == "McpProxy":
+                loader.load_proxy_config(path)
+            else:
+                loader.load(path, entrypoint=args.target)
+            print(f"ok       {path}")
+        except loader.ValidationError as exc:
+            invalid += 1
+            print(f"invalid  {exc}")
+    print(f"{len(paths)} file(s), {invalid} invalid")
+    return 1 if invalid else 0
 
 
 def _mcp_proxy(args: argparse.Namespace) -> int:

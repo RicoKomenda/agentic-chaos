@@ -5,6 +5,11 @@ from __future__ import annotations
 import math
 from statistics import NormalDist
 
+__all__ = [
+    "runs_needed",
+    "wilson_interval",
+]
+
 
 def wilson_interval(passes: int, runs: int, confidence: float = 0.95) -> tuple[float, float]:
     """Wilson score interval for a pass rate. Well-behaved for small ``runs`` and rates near 0 or 1."""

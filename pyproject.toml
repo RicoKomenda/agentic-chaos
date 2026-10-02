@@ -36,7 +36,14 @@ case-studies = [
     "qdrant-client==1.12.1",
     "sqlmodel==0.0.22",
 ]
-dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "httpx>=0.27",
+    "mypy>=2.4.0",
+    "types-pyyaml>=6.0.12.20260906",
+    "jsonschema>=4.26.0",
+]
 interop = [
     "a2a-sdk>=1.2.1",
     "anthropic>=1.11.0",
@@ -54,6 +61,16 @@ pythonpath = ["."]
 markers = [
   "interop: tests against official third-party SDKs (needs the interop dependency group)",
 ]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src/agentic_chaos"]
+
+[[tool.mypy.overrides]]
+# transports are built per httpx-compatible module (httpx or httpx2), so its classes are typed as Any there
+module = ["agentic_chaos.integrations.*"]
+warn_return_any = false
 
 [tool.ruff]
 line-length = 120

@@ -1,4 +1,4 @@
-apiVersion: agentic-chaos/v1alpha1
+apiVersion: agentic-chaos/v1
 kind: Experiment
 metadata:
   name: goal-hijack

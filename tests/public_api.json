@@ -1,0 +1,201 @@
+{
+  "agentic_chaos": [
+    "Experiment",
+    "ExperimentResult",
+    "ProbeStats",
+    "Verdict",
+    "agent",
+    "ap2",
+    "control",
+    "describe_tool",
+    "discover_agent",
+    "faults",
+    "intercept",
+    "llm",
+    "memory",
+    "output",
+    "payment",
+    "probes",
+    "suspended",
+    "tool"
+  ],
+  "agentic_chaos.ap2": [
+    "cart_hash",
+    "cart_matches_reviewed",
+    "cart_within_intent",
+    "max_settlements",
+    "payment_requires_extension",
+    "record_intent",
+    "record_payment_mandate",
+    "record_review",
+    "record_settlement"
+  ],
+  "agentic_chaos.cli": [
+    "main"
+  ],
+  "agentic_chaos.experiment": [
+    "Experiment",
+    "ExperimentResult",
+    "ProbeStats",
+    "RunResult",
+    "Verdict"
+  ],
+  "agentic_chaos.faults": [
+    "AuthError",
+    "ChaosAuthError",
+    "ChaosError",
+    "ChaosRateLimit",
+    "ChaosTimeout",
+    "ControlOutage",
+    "CorruptJSON",
+    "Duplicate",
+    "Empty",
+    "Error",
+    "FAULTS",
+    "Fault",
+    "Flood",
+    "ForceVerdict",
+    "InjectInstruction",
+    "Latency",
+    "McpElicitation",
+    "McpListChangedFlood",
+    "McpSampling",
+    "Override",
+    "Patch",
+    "PoisonMemory",
+    "PoisonToolDescription",
+    "RateLimit",
+    "Repeat",
+    "Replay",
+    "ShadowTool",
+    "SpoofAgentCard",
+    "Timeout",
+    "TimeoutAfterCommit",
+    "Truncate",
+    "build"
+  ],
+  "agentic_chaos.inject": [
+    "agent",
+    "control",
+    "describe_tool",
+    "discover_agent",
+    "llm",
+    "memory",
+    "output",
+    "payment",
+    "tool"
+  ],
+  "agentic_chaos.integrations.a2a": [
+    "A2AChaosTransport",
+    "AsyncA2AChaosTransport",
+    "V1_METHODS",
+    "build"
+  ],
+  "agentic_chaos.integrations.httpx": [
+    "AsyncChaosTransport",
+    "ChaosTransport",
+    "build",
+    "map_text"
+  ],
+  "agentic_chaos.integrations.httpx2": [
+    "A2AChaosTransport",
+    "AsyncA2AChaosTransport",
+    "AsyncChaosTransport",
+    "ChaosTransport"
+  ],
+  "agentic_chaos.judges": [
+    "OpenAICompatibleJudge",
+    "parse_verdict"
+  ],
+  "agentic_chaos.loader": [
+    "API_VERSION",
+    "ValidationError",
+    "expand",
+    "from_dict",
+    "load",
+    "load_proxy_config",
+    "read",
+    "resolve"
+  ],
+  "agentic_chaos.mcp": [
+    "Endpoint",
+    "McpChaosProxy",
+    "StdioEndpoint"
+  ],
+  "agentic_chaos.mcp.core": [
+    "Decision",
+    "McpChaosCore"
+  ],
+  "agentic_chaos.mcp.http": [
+    "McpHttpProxy"
+  ],
+  "agentic_chaos.mcp.proxy": [
+    "Endpoint",
+    "McpChaosProxy",
+    "StdioEndpoint"
+  ],
+  "agentic_chaos.payloads": [
+    "PAYLOADS",
+    "SINK_ADDRESS",
+    "new_canary",
+    "render"
+  ],
+  "agentic_chaos.probes": [
+    "PROBES",
+    "Probe",
+    "ProbeResult",
+    "SINK_KINDS",
+    "agent_not_contacted",
+    "alert_raised",
+    "blast_radius",
+    "build",
+    "canary_not_leaked",
+    "completes_within",
+    "cost_within",
+    "custom",
+    "elicitation_not_accepted",
+    "expect",
+    "fails_closed",
+    "judge",
+    "max_agent_calls",
+    "max_events",
+    "max_llm_calls",
+    "max_tool_calls",
+    "no_call_after_tool_change",
+    "no_unhandled_error",
+    "not_refused",
+    "output_contains",
+    "output_matches",
+    "output_not_contains",
+    "tokens_within",
+    "tool_called",
+    "tool_not_called"
+  ],
+  "agentic_chaos.runtime": [
+    "Event",
+    "InjectionContext",
+    "POINTS",
+    "Session",
+    "Trace",
+    "bound",
+    "current",
+    "intercept",
+    "iter_strings",
+    "record",
+    "suspended"
+  ],
+  "agentic_chaos.schema": [
+    "API_VERSION",
+    "DEPRECATED_VERSIONS",
+    "Param",
+    "ValidationError",
+    "fault_params",
+    "json_schema",
+    "probe_params",
+    "validate"
+  ],
+  "agentic_chaos.stats": [
+    "runs_needed",
+    "wilson_interval"
+  ]
+}
