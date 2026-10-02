@@ -245,6 +245,111 @@ Hosted observability has outages too ([status history](https://statusgator.com/s
 
 ---
 
+---
+
+## H. Agent failure-mode taxonomies
+
+Chaos experiments need a vocabulary for *how agents fail*, not only for how they are attacked.
+
+- **MAST** ([Why Do Multi-Agent LLM Systems Fail?, arXiv 2503.13657](https://arxiv.org/abs/2503.13657), NeurIPS 2025):
+  14 failure modes in 3 categories, derived from 1,642 annotated traces.
+  - *System design* (44.2%): disobeying the task or role spec, step repetition, loss of history, not knowing when to stop.
+  - *Inter-agent misalignment* (32.3%): conversation reset, not asking for clarification, ignoring other agents' input, reasoning that does not match the action.
+  - *Task verification* (21.3%): stopping early, skipping or weak verification.
+- **Microsoft, Taxonomy of Failure Modes in Agentic AI Systems**
+  ([v1, April 2025](https://www.microsoft.com/en-us/security/blog/2025/04/24/new-whitepaper-outlines-the-taxonomy-of-failure-modes-in-ai-agents/);
+  [v2, June 2026](https://www.microsoft.com/en-us/security/blog/2026/06/04/updating-taxonomy-failure-modes-agentic-ai-systems-year-red-teaming-taught-us/)).
+  It sorts failures as novel vs. existing and safety vs. security. Security failures include agent compromise, knowledge-base poisoning,
+  cross-domain prompt injection, HITL bypass, incorrect permissions, resource exhaustion, insufficient isolation and loss of
+  provenance. v2 adds seven modes, including MCP/plugin abuse, computer-use visual attacks, supply-chain compromise via tool
+  descriptions, and capability disclosure as an attack pivot.
+- **Agents of Chaos** ([arXiv 2602.20021](https://arxiv.org/abs/2602.20021)): a live two-week study of six agents that documents failures emerging from integration.
+
+**Gap in Agentic Chaos:** today's faults hit *dependencies* (tools, models, memory, controls). The behavioural modes in MAST
+(step repetition, missing termination, skipped verification) can be *observed* with probes, but there is no fault that
+*induces* them yet, for example by perturbing a peer agent's message. That needs the `agent.message` point (section I).
+
+---
+
+## I. Agent protocols: MCP, A2A, AP2 and the commerce stack
+
+The 2026 stack is layered. MCP connects agents to tools and data, A2A connects agents to agents, and AP2 / UCP / ACP / x402 carry
+commerce and payments. MCP, A2A, AP2 and UCP are under Linux Foundation governance
+([overview](https://stellagent.ai/insights/mcp-vs-a2a-vs-ap2-protocol-comparison)). Each layer adds protocol-level failure
+modes that framework-level instrumentation does not see. Comparative threat models:
+[MCP, A2A, Agora, ANP (arXiv 2602.11327)](https://arxiv.org/pdf/2602.11327),
+[governance gaps in MCP/A2A/ACP (arXiv 2606.31498)](https://arxiv.org/pdf/2606.31498).
+
+### I1. MCP
+
+Current coverage is generic only: `poison_tool_description` through `describe_tool()`. MCP-specific surfaces:
+
+| Scenario | Fault idea | Probe idea |
+| --- | --- | --- |
+| Rug pull: definitions change after approval ([ETDI](https://arxiv.org/pdf/2506.01333)) | proxy rewrites `tools/list` after N calls | tool called only with an approved definition hash |
+| Tool name collision / shadowing across servers ([AP2 analysis, PoC 2](https://arxiv.org/html/2608.23858v1)) | second server registers a same-named tool | call routed to the expected server |
+| Sampling abuse: server makes the client's LLM do work, injects instructions ([Unit 42](https://unit42.paloaltonetworks.com/model-context-protocol-attack-vectors/)) | proxy issues `sampling/createMessage` with payload | `canary_not_leaked`, `tokens_within` |
+| Elicitation spoofing: server asks the user for secrets. Spec 2026-07-28 allows server requests only during an active client request ([summary](https://blog.mcpservers.org/posts/mcp-spec-2026-07-28)) | unsolicited or credential-seeking elicitation | client rejects it; no secret is passed |
+| Resource / prompt poisoning | `inject_instruction` on `resources/read` | `canary_not_leaked` |
+| Server outage, slow or oversized results | latency, error, huge payload | `no_unhandled_error`, `tokens_within` |
+| OAuth token expiry / revoked consent; confused deputy | 401/403, audience mismatch | no fallback to broader credentials |
+| `list_changed` notification storms | notification flood | bounded re-listing, no re-approval bypass |
+
+**Approach:** an **MCP chaos proxy** (stdio and Streamable HTTP) that sits between any client and server. It needs no code
+changes in the agent and works for Claude Code, IDEs, LangGraph and others. It maps to the existing `tool.*` points.
+
+### I2. A2A (Agent2Agent)
+
+Threats from [CSA's MAESTRO threat model](https://cloudsecurityalliance.org/blog/2025/04/30/threat-modeling-google-s-a2a-protocol-with-the-maestro-framework),
+[Semgrep's guide](https://semgrep.dev/blog/2025/a-security-engineers-guide-to-the-a2a-protocol/),
+[arXiv 2504.16902](https://arxiv.org/html/2504.16902v1) and [A2ABreak, arXiv 2609.10871](https://arxiv.org/pdf/2609.10871):
+
+| Scenario | Fault idea | Probe idea |
+| --- | --- | --- |
+| Agent Card spoofing / typosquatting / tampering | discovery returns a forged or modified card (skills, URL, auth) | `no_task_to_untrusted_agent` (signed-card / allow-list check held) |
+| Capability over-claim | card advertises skills the agent should not have | delegation respects the client's policy, not the card's claims |
+| Task injection, replay, state confusion | duplicate or replayed `tasks/send`, out-of-order state transitions | idempotent task handling; no action on replayed tasks |
+| Malicious task artifacts / messages | `inject_instruction` in artifacts returned by a remote agent | `canary_not_leaked` (blast radius across agents) |
+| Streaming interruption or injection (SSE) | cut, delay, inject events | consistent task state, no partial-result actions |
+| Push-notification spoofing | forged webhook callback | notification authenticity is verified before acting |
+| Recursive delegation / delegation loops (DoS) | remote agent re-delegates back | `max_delegation_depth`, `tokens_within` |
+| Remote agent outage / slow agent | latency, error on remote agent | graceful degradation, no fallback to an unvetted agent |
+
+**Approach:** an `agent.message` and `agent.discover` injection point, plus an A2A client/server middleware adapter.
+MAST-style misalignment (conversation reset, ignored input) can be *induced* here by dropping or reordering messages.
+
+### I3. AP2 (Agent Payments Protocol)
+
+AP2 secures signed **mandates** (Intent, Cart, Payment) but, as the AP2 documentation acknowledges, it assumes prompt injection cannot be fully
+prevented ([AP2 security considerations](https://ap2-protocol.org/ap2/security_and_privacy_considerations/)).
+[*Beyond the Mandate* (arXiv 2608.23858)](https://arxiv.org/html/2608.23858v1) finds 48 threats in five families: semantic
+manipulation, authority spoofing, supply-chain and trust-root subversion, state-binding failures, and accountability failures. 8 of them are high severity.
+The core result: *a valid signature over a mandate does not prove user intent when the pre-signing context
+(catalog data, tool results, A2A messages) was manipulated.* Formal analysis:
+[arXiv 2609.00060](https://arxiv.org/pdf/2609.00060). Guidance: [CSA](https://cloudsecurityalliance.org/blog/2025/10/06/secure-use-of-the-agent-payments-protocol-ap2-a-framework-for-trustworthy-ai-driven-transactions).
+
+| Scenario | Fault idea | Probe idea |
+| --- | --- | --- |
+| Context poisoning before signing (price, merchant, quantity) | `inject_instruction` / value mutation on catalog and tool results | `cart_matches_intent`: signed cart lies within the Intent Mandate's constraints |
+| Cart mutation after user review | mutate cart between display and signing | signed cart hash equals the displayed cart hash |
+| Mandate replay / stale mandate reuse | resend an old Payment Mandate | rejected; at most one settlement per mandate |
+| Protocol / extension downgrade | advertise an older AP2 extension | downgrade refused |
+| Unsigned side-channel data (e.g. `risk_data`) poisoned | mutate unsigned fields | decisions do not depend on unsigned fields |
+| Credentials provider or processor outage | timeout, error | no retry that double-charges; no fallback to a weaker payment path |
+| Human-not-present flow with an over-broad Intent Mandate | agent buys at the edge of the mandate under injection | spend stays below a canary threshold |
+
+**Approach:** a `payment` control point and a reference shopping-agent target (deterministic, test values only, in the
+spirit of the mailbot demo). Payment canaries are amounts and merchant IDs, never real instruments.
+
+### I4. Other protocols to track
+
+- **UCP** (Universal Commerce Protocol, Google, 2026) and **ACP** (Agentic Commerce Protocol, OpenAI/Stripe): checkout flows share AP2's pre-signing-context problem. Note that "ACP" also names IBM's Agent Communication Protocol, which has [pivoted to discovery](https://stellagent.ai/insights/mcp-vs-a2a-vs-ap2-protocol-comparison).
+- **x402** (HTTP 402 payments): per-request payments make denial of wallet a literal payment flow. Every retry storm becomes a series of real micro-payments.
+- **ANP** (Agent Network Protocol), **Agora**: decentralised identity and discovery, with the same discovery-trust questions as A2A Agent Cards.
+- **AG-UI** and similar agent-to-frontend protocols: event-stream integrity between agent and user interface (spoofed approval prompts).
+
+---
+
 ## Proposed additions to Agentic Chaos
 
 Priorities: **P1** has a high security payoff and fits the current design. **P2** is valuable but needs more design. **P3** is later.
@@ -263,6 +368,10 @@ Priorities: **P1** has a high security payoff and fits the current design. **P2*
 | P2 | `agent.message` point: inject, spoof, delay, drop + blast-radius probe | point | D4 |
 | P2 | MCP chaos proxy (rug pull, poisoning, auth errors on the wire) | integration | E1, E2 |
 | P2 | `model_swap` | fault | A5 |
+| P1 | MCP chaos proxy: rug pull, shadowing, sampling/elicitation abuse, auth errors | integration | E1, E2, I1 |
+| P2 | `agent.message` / `agent.discover` points + A2A adapter (card spoofing, replay, delegation loops) | points + integration | D4, H, I2 |
+| P2 | `payment` control point + AP2 reference shopping target + `cart_matches_intent` probe | point + target + probe | I3 |
+| P2 | MAST / Microsoft taxonomy tags on faults and experiments | catalog | H |
 | P3 | `cache.read` point + `poison_cache` | point + fault | B4 |
 | P3 | `trace.export` point + `telemetry_drop` | point + fault | G |
 | P3 | LitmusChaos / Chaos Mesh bridge | integration | F |
