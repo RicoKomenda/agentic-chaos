@@ -54,8 +54,12 @@ dev = [
 interop = [
     "a2a-sdk>=1.2.1",
     "anthropic>=1.11.0",
+    "langchain-core>=1.6.6",
+    "langgraph>=1.2.12",
     "mcp>=2.2.0",
     "openai>=3.24.0",
+    "openai-agents>=0.23.1",
+    "pydantic-ai-slim>=2.53.0",
     "uvicorn>=0.54.0",
 ]
 

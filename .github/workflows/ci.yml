@@ -35,7 +35,6 @@ jobs:
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy
       - run: uv run agentic-chaos validate experiments
       - run: uv run pytest -W error::DeprecationWarning
       - name: Hardened demo targets pass the catalogs
@@ -55,6 +54,7 @@ jobs:
         with:
           node-version: "20"
       - run: uv sync --group interop
+      - run: uv run mypy  # strict; needs the optional framework packages for the adapters
       - run: uv run pytest -m interop -v
 
   action:

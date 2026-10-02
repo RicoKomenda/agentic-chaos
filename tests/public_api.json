@@ -192,6 +192,17 @@
     "MAX_EVENTS",
     "export"
   ],
+  "agentic_chaos.integrations.langchain": [
+    "instrument_tool",
+    "instrument_tools"
+  ],
+  "agentic_chaos.integrations.openai_agents": [
+    "instrument_tool",
+    "instrument_tools"
+  ],
+  "agentic_chaos.integrations.pydantic_ai": [
+    "instrument_tool"
+  ],
   "agentic_chaos.runtime": [
     "DISABLE_ENV",
     "Event",

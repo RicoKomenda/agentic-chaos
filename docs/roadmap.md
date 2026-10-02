@@ -25,7 +25,7 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 - [x] Contract: `agentic-chaos/v1` format, validation, JSON Schema, public API, strict typing, versioning policy
 - [x] Safety of the tool: redaction, kill switch, proxy limits and binding, non-blocking latency
 - [x] Platform support: Windows and macOS CI, Python 3.14
-- [ ] Framework adapters, pytest plugin, GitHub Action, JUnit/HTML/OpenTelemetry output
+- [x] Framework adapters (LangChain/LangGraph, OpenAI Agents SDK, Pydantic AI), pytest plugin, GitHub Action, JUnit/HTML/OpenTelemetry output
 - [ ] Release engineering: PyPI trusted publishing, signed provenance, docs site
 - [x] Remaining risk coverage: `reroute`, residency/model/control/approval probes, recipes for ASI05/ASI09/ASI10
 

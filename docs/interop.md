@@ -15,6 +15,9 @@ uv run pytest -m interop
 | A2A Python SDK (`a2a-sdk`) client and server | 1.2 (protocol 1.0) | JSON-RPC and HTTP+JSON bindings, blocking and streaming; card spoofing, text injection, errors |
 | OpenAI Python SDK | 3.24 (`httpx2`) | chat completions, streaming deltas, retries on 429, 401/403/timeout mapping, raw wire faults |
 | Anthropic Python SDK | 1.11 (`httpx2`) | messages, retries on 429, 401/403/timeout mapping |
+| LangChain / LangGraph | langchain-core 1.6, langgraph 1.2 | tool adapter, `ToolNode` in a compiled graph |
+| OpenAI Agents SDK | 0.23 | `FunctionTool` adapter |
+| Pydantic AI | 2.53 | tool adapter in an `Agent` driven by `TestModel` |
 
 ## Findings
 
@@ -36,6 +39,9 @@ Building the interop suite changed the library and surfaced behaviour worth know
    (`MCPError -32603 "Server returned an error response"`); the status and challenge are not visible to
    the application. With an OAuth provider, the challenge fields the SDK reads (`error`, `scope`,
    `resource_metadata`) are present in the proxy's responses.
+
+7. **LangGraph 1.2's `ToolNode` re-raises tool errors by default.** A single injected tool timeout ends the
+   whole graph run unless `handle_tool_errors` is configured; earlier versions turned errors into tool messages.
 
 ## Version policy
 

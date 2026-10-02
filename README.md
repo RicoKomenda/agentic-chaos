@@ -208,6 +208,7 @@ can be tested together. See [docs/statistics.md](docs/statistics.md).
 - [Recipes: fallback, region failover, approvals, multi-turn drift, code tools](docs/recipes.md)
 - [Statistics: pass rates, confidence, availability and cost](docs/statistics.md)
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
+- [Integrations: frameworks, pytest, GitHub Actions, reports](docs/integrations.md)
 - [Interoperability with official SDKs, and findings](docs/interop.md)
 - [Case study: Damn Vulnerable Memory Agent](docs/case-studies/dvma.md)
 - [Running chaos safely](docs/safety.md): kill switch, secret redaction, proxy limits
