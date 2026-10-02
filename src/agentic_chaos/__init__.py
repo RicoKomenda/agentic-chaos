@@ -2,7 +2,7 @@
 
 from agentic_chaos import faults, probes
 from agentic_chaos.experiment import Experiment, ExperimentResult, Verdict
-from agentic_chaos.inject import control, describe_tool, llm, memory, output, tool
+from agentic_chaos.inject import agent, control, describe_tool, discover_agent, llm, memory, output, payment, tool
 from agentic_chaos.runtime import intercept
 
 __version__ = "0.1.0.dev0"
@@ -11,13 +11,16 @@ __all__ = [
     "Experiment",
     "ExperimentResult",
     "Verdict",
+    "agent",
     "control",
     "describe_tool",
+    "discover_agent",
     "faults",
     "intercept",
     "llm",
     "memory",
     "output",
+    "payment",
     "probes",
     "tool",
 ]

@@ -44,7 +44,7 @@ faults:
     target: "payments.*"      # glob on the instrumented name
     point: tool.call          # restrict to one injection point
     probability: 0.3          # inject in ~30% of matching calls (seeded)
-    after_calls: 2            # let the first two calls through
+    after_calls: 2            # let the first two calls through (counted per matching target name)
     max_injections: 1         # inject at most once per run
 ```
 

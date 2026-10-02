@@ -29,7 +29,15 @@ POINTS = (
     "tool.call",  # before a tool executes
     "tool.result",  # a tool's return value
     "memory.read",  # data returned from long-term memory / RAG
+    "resource.read",  # resource contents (e.g. MCP resources/read)
     "control",  # a security control decision (guardrail, authz, approval, ...)
+    "agent.discover",  # another agent's self-description (e.g. an A2A Agent Card)
+    "agent.call",  # before a message/task is sent to another agent
+    "agent.message",  # another agent's reply
+    "payment.call",  # before a payment step (charge, mandate submission) executes
+    "payment.result",  # the result of a payment step
+    "mcp.tools",  # the full tool list returned by an MCP server
+    "mcp.server_request",  # server-initiated MCP requests/notifications (sampling, elicitation, ...)
 )
 
 
@@ -83,15 +91,15 @@ class Session:
         self.faults = list(faults or [])
         self.rng = random.Random(seed)
         self.trace = Trace()
-        self._seen: Counter[int] = Counter()
+        self._seen: Counter[tuple[int, str]] = Counter()  # per fault and target name
         self._fired: Counter[int] = Counter()
 
     def intercept(self, point: str, name: str, value: Any, **context: Any) -> Any:
         for index, fault in enumerate(self.faults):
             if not fault.matches(point, name):
                 continue
-            self._seen[index] += 1
-            if self._seen[index] <= fault.after_calls:
+            self._seen[index, name] += 1
+            if self._seen[index, name] <= fault.after_calls:
                 continue
             if fault.max_injections is not None and self._fired[index] >= fault.max_injections:
                 continue
