@@ -202,6 +202,7 @@ runs are seeded so results can be reproduced.
 - [Writing experiments](docs/writing-experiments.md)
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
 - [Interoperability with official SDKs, and findings](docs/interop.md)
+- [Case study: Damn Vulnerable Memory Agent](docs/case-studies/dvma.md)
 - [Running chaos safely](docs/safety.md)
 - [Landscape and related work](docs/landscape.md)
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)

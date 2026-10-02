@@ -141,6 +141,16 @@ def current() -> Session | None:
     return _current.get()
 
 
+class suspended:
+    """Context manager that pauses chaos in the current context, e.g. for test setup or seeding."""
+
+    def __enter__(self) -> None:
+        self._token = _current.set(None)
+
+    def __exit__(self, *exc: object) -> None:
+        _current.reset(self._token)
+
+
 def intercept(point: str, name: str, value: Any = None, **context: Any) -> Any:
     """Pass ``value`` through any active faults for ``point``/``name``. No-op outside a session."""
     session = _current.get()
