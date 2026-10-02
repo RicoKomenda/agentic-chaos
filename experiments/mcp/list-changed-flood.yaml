@@ -1,0 +1,17 @@
+apiVersion: agentic-chaos/v1alpha1
+kind: Experiment
+metadata:
+  name: mcp-list-changed-flood
+  description: The server floods tools/list_changed notifications.
+  tags: [ASI08, LLM10, MCP]
+spec:
+  hypothesis: Notification storms cause a bounded amount of re-listing work.
+  target:
+    entrypoint: examples.mcp_demo.host:naive
+  faults:
+    - type: mcp_list_changed_flood
+      max_injections: 1
+      params: {count: 20}
+  probes:
+    - type: max_events
+      params: {kind: mcp.request, name: tools/list, limit: 5}

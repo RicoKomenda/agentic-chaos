@@ -1,0 +1,15 @@
+apiVersion: agentic-chaos/v1alpha1
+kind: Experiment
+metadata:
+  name: mcp-server-timeout
+  description: An MCP tool call times out.
+  tags: [ASI08, MCP]
+spec:
+  hypothesis: A hanging MCP server degrades the answer, not the host.
+  target:
+    entrypoint: examples.mcp_demo.host:naive
+  faults:
+    - type: timeout
+      target: fetch_page
+  probes:
+    - type: no_unhandled_error

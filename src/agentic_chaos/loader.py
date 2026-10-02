@@ -91,3 +91,32 @@ def _fault(item: dict[str, Any]) -> fault_lib.Fault:
 
 def _probe(item: dict[str, Any]) -> probe_lib.Probe:
     return probe_lib.build(item["type"], **item.get("params", {}))
+
+
+def load_proxy_config(path: str | Path) -> tuple[list[fault_lib.Fault], list[probe_lib.Probe], int | None]:
+    """Load a ``kind: McpProxy`` file: the faults a stand-alone proxy injects and probes checked at shutdown."""
+    doc = yaml.safe_load(Path(path).read_text())
+    if doc.get("apiVersion") != API_VERSION or doc.get("kind") != "McpProxy":
+        raise ValueError(f"expected apiVersion {API_VERSION!r} and kind 'McpProxy'")
+    spec = doc.get("spec", {})
+    return (
+        [_fault(f) for f in spec.get("faults", [])],
+        [_probe(p) for p in spec.get("probes", [])],
+        spec.get("seed"),
+    )
+
+
+def expand(paths: list[Path]) -> list[Path]:
+    """Expand directories into the ``kind: Experiment`` files they contain (recursively, sorted)."""
+    files: list[Path] = []
+    for path in paths:
+        if path.is_dir():
+            files.extend(p for p in sorted(path.rglob("*.yaml")) if _kind(p) == "Experiment")
+        else:
+            files.append(path)
+    return files
+
+
+def _kind(path: Path) -> str | None:
+    doc = yaml.safe_load(path.read_text())
+    return doc.get("kind") if isinstance(doc, dict) else None
