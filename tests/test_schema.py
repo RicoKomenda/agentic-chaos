@@ -21,12 +21,12 @@ def doc(**spec) -> dict:
 
 def test_committed_schema_is_up_to_date():
     """Regenerate with: agentic-chaos schema --output schema/agentic-chaos.v1.schema.json"""
-    assert json.loads(SCHEMA_FILE.read_text()) == schema.json_schema()
+    assert json.loads(SCHEMA_FILE.read_text(encoding="utf-8")) == schema.json_schema()
 
 
 @pytest.mark.parametrize("path", FILES, ids=lambda p: str(p.relative_to(ROOT)))
 def test_catalog_matches_json_schema(path):
-    jsonschema.validate(yaml.safe_load(path.read_text()), schema.json_schema())
+    jsonschema.validate(yaml.safe_load(path.read_text(encoding="utf-8")), schema.json_schema())
 
 
 def test_json_schema_rejects_what_the_validator_rejects():
@@ -73,7 +73,7 @@ def test_unknown_version_is_an_error():
 
 def test_yaml_syntax_error_has_location(tmp_path):
     path = tmp_path / "broken.yaml"
-    path.write_text("apiVersion: agentic-chaos/v1\nkind: [unclosed\n")
+    path.write_text("apiVersion: agentic-chaos/v1\nkind: [unclosed\n", encoding="utf-8")
     with pytest.raises(loader.ValidationError) as info:
         loader.load(path)
     assert "line 3" in str(info.value) and str(path) in str(info.value)
@@ -87,8 +87,8 @@ def test_probes_registered_by_the_target_module_are_known(tmp_path):
 
 def test_cli_validate_and_exit_codes(tmp_path, capsys):
     good, bad = tmp_path / "good.yaml", tmp_path / "bad.yaml"
-    good.write_text(yaml.safe_dump(doc()))
-    bad.write_text(yaml.safe_dump(doc(runz=1)))
+    good.write_text(yaml.safe_dump(doc()), encoding="utf-8")
+    bad.write_text(yaml.safe_dump(doc(runz=1)), encoding="utf-8")
     assert main(["validate", str(good)]) == 0
     assert main(["validate", str(tmp_path)]) == 1
     assert main(["run", str(bad)]) == 2

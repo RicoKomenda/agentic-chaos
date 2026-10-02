@@ -8,12 +8,25 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash  # identical globbing and quoting on Linux, macOS and Windows
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python: ["3.10", "3.12", "3.13"]
+        include:
+          - {os: ubuntu-latest, python: "3.10"}
+          - {os: ubuntu-latest, python: "3.11"}
+          - {os: ubuntu-latest, python: "3.12"}
+          - {os: ubuntu-latest, python: "3.13"}
+          - {os: ubuntu-latest, python: "3.14"}
+          - {os: macos-latest, python: "3.13"}
+          - {os: windows-latest, python: "3.10"}
+          - {os: windows-latest, python: "3.13"}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -24,7 +37,7 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run agentic-chaos validate experiments
-      - run: uv run pytest
+      - run: uv run pytest -W error::DeprecationWarning
       - name: Hardened demo targets pass the catalogs
         run: |
           uv run agentic-chaos run experiments/*.yaml --target examples.mailbot.agent:hardened

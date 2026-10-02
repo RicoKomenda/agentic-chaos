@@ -70,7 +70,7 @@ def test_loopback_detection(host, loopback):
 
 def test_cli_refuses_remote_bind_without_flag(tmp_path):
     config = tmp_path / "p.yaml"
-    config.write_text("apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults: []\n")
+    config.write_text("apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults: []\n", encoding="utf-8")
     with pytest.raises(SystemExit, match="refusing to listen"):
         main(["mcp-proxy", "--faults", str(config), "--upstream", "http://127.0.0.1:1/mcp", "--listen", "0.0.0.0:0"])
 

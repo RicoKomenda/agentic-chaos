@@ -111,7 +111,8 @@ def test_loader_reads_thresholds(tmp_path):
         "spec:\n  target: {entrypoint: 'tests.test_stats:flaky_target'}\n  runs: 5\n  confidence: 0.9\n"
         "  require_confidence: true\n  pass_rate: 0.8\n  faults: [{type: empty, target: coin}]\n"
         "  probes:\n    - {type: output_contains, params: {text: ok}, min_pass_rate: 0.5}\n"
-        "    - {type: no_unhandled_error}\n"
+        "    - {type: no_unhandled_error}\n",
+        encoding="utf-8",
     )
     experiment = loader.load(path)
     assert experiment.confidence == 0.9 and experiment.require_confidence and experiment.pass_rate == 0.8

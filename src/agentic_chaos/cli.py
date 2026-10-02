@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "schema":
         text = json.dumps(schema.json_schema(), indent=2) + "\n"
         if args.output:
-            args.output.write_text(text)
+            args.output.write_text(text, encoding="utf-8")
         else:
             sys.stdout.write(text)
         return 0
@@ -104,7 +104,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.report:
         redactor: Redactor | bool = False if args.no_redact else Redactor(extra_patterns=args.redact_pattern)
-        args.report.write_text(json.dumps([r.to_dict(args.traces, redactor=redactor) for r in results], indent=2))
+        args.report.write_text(
+            json.dumps([r.to_dict(args.traces, redactor=redactor) for r in results], indent=2), encoding="utf-8"
+        )
         print(f"report written to {args.report}")
 
     weaknesses = sum(r.verdict is Verdict.WEAKNESS for r in results)
@@ -149,6 +151,7 @@ def _validate(args: argparse.Namespace) -> int:
 
 def _mcp_proxy(args: argparse.Namespace) -> int:
     import asyncio
+    import signal
 
     from agentic_chaos.mcp import McpChaosProxy, StdioEndpoint
     from agentic_chaos.runtime import Session, bound
@@ -174,8 +177,14 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
                 proxy_http = McpHttpProxy(args.upstream)
                 server = await proxy_http.serve(host or "127.0.0.1", int(port))
                 print(f"[agentic-chaos] MCP chaos proxy listening on {proxy_http.url}", file=sys.stderr)
+                stop = asyncio.Event()
+                for name in ("SIGINT", "SIGTERM"):
+                    try:  # POSIX: stop cleanly so probes run and the trace is written
+                        asyncio.get_running_loop().add_signal_handler(getattr(signal, name), stop.set)
+                    except (NotImplementedError, AttributeError, RuntimeError):
+                        pass  # Windows: Ctrl-C raises KeyboardInterrupt instead
                 async with server:
-                    await server.serve_forever()
+                    await stop.wait()
             else:
                 proxy = McpChaosProxy(command)
                 await proxy.start(await StdioEndpoint().open())
@@ -192,7 +201,7 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
         report: Any = {"probes": [r.to_dict() for r in results], "trace": session.trace.to_dict()}
         if not args.no_redact:
             report = redact(report)
-        args.trace.write_text(json.dumps(report, indent=2))
+        args.trace.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return 0 if all(r.passed for r in results) else 1
 
 

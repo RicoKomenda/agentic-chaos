@@ -80,7 +80,7 @@ def test_stdio_cli(tmp_path):
     )
     assert json.loads(proc.stdout)["result"]["tools"]
     assert "PASS no_call_after_tool_change" in proc.stderr
-    assert json.loads(trace.read_text())["trace"]["events"]
+    assert json.loads(trace.read_text(encoding="utf-8"))["trace"]["events"]
 
 
 def test_duplicate_tool_call_answers_client_once():

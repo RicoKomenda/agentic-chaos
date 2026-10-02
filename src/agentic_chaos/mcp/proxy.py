@@ -65,17 +65,17 @@ class Endpoint:
 
 
 class StdioEndpoint:
-    """The proxy's own stdin/stdout, for use as a stand-alone stdio MCP server."""
+    """The proxy's own stdin/stdout, for use as a stand-alone stdio MCP server.
+
+    stdin is read in a worker thread: asyncio pipe readers are not available for console handles on Windows.
+    """
 
     async def open(self) -> StdioEndpoint:
-        loop = asyncio.get_running_loop()
-        self._reader = asyncio.StreamReader()
-        await loop.connect_read_pipe(lambda: asyncio.StreamReaderProtocol(self._reader), sys.stdin)
         return self
 
     async def read(self) -> dict[str, Any] | None:
         while True:
-            line = await self._reader.readline()
+            line = await asyncio.to_thread(sys.stdin.buffer.readline)
             if not line:
                 return None
             if line.strip():
@@ -84,8 +84,8 @@ class StdioEndpoint:
 
     async def write(self, message: dict[str, Any] | None) -> None:
         if message is not None:
-            sys.stdout.write(json.dumps(message, separators=(",", ":")) + "\n")
-            sys.stdout.flush()
+            sys.stdout.buffer.write((json.dumps(message, separators=(",", ":")) + "\n").encode("utf-8"))
+            sys.stdout.buffer.flush()
 
 
 class McpChaosProxy:

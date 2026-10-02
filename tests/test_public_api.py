@@ -43,8 +43,8 @@ def test_every_exported_name_exists():
 
 
 def test_public_api_matches_snapshot():
-    assert current() == json.loads(SNAPSHOT.read_text())
+    assert current() == json.loads(SNAPSHOT.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
-    SNAPSHOT.write_text(json.dumps(current(), indent=2) + "\n")
+    SNAPSHOT.write_text(json.dumps(current(), indent=2) + "\n", encoding="utf-8")

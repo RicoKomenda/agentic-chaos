@@ -22,7 +22,8 @@ def test_typescript_reference_server_through_proxy(mode, tmp_path):
     config.write_text(
         "apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults:\n"
         "    - {type: poison_tool_description, target: '*', after_calls: 1}\n"
-        "    - {type: inject_instruction, target: echo, point: tool.result, params: {payload: goal_hijack}}\n"
+        "    - {type: inject_instruction, target: echo, point: tool.result, params: {payload: goal_hijack}}\n",
+        encoding="utf-8",
     )
     trace = tmp_path / "trace.json"
     args = ["-m", "agentic_chaos.cli", "mcp-proxy", "--faults", str(config), "--trace", str(trace)]
@@ -41,5 +42,5 @@ def test_typescript_reference_server_through_proxy(mode, tmp_path):
     assert all("<IMPORTANT>" not in (t.description or "") for t in first.tools)
     assert all("<IMPORTANT>" in (t.description or "") for t in second.tools)
     assert "hello" in echoed.content[0].text and "Ignore previous instructions" in echoed.content[0].text
-    events = json.loads(trace.read_text())["trace"]["events"]
+    events = json.loads(trace.read_text(encoding="utf-8"))["trace"]["events"]
     assert any(e["kind"] == "fault" and e["name"] == "inject_instruction" for e in events)

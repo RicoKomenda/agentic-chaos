@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 
 import httpx
 import pytest
@@ -113,6 +114,7 @@ def test_duplicate_delivery_reaches_upstream_twice():
     assert response.json()["id"] == 1 and calls.count("tools/call") == 2
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="stops the proxy with SIGINT")
 def test_cli_http_mode_end_to_end(tmp_path):
     import signal
     import socket
@@ -157,4 +159,4 @@ def test_cli_http_mode_end_to_end(tmp_path):
         server.wait(timeout=15)
     assert "<IMPORTANT>" in lists[1]["result"]["tools"][1]["description"]
     assert "FAIL no_call_after_tool_change" in stderr
-    assert json.loads(trace.read_text())["probes"]
+    assert json.loads(trace.read_text(encoding="utf-8"))["probes"]

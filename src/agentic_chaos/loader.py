@@ -60,7 +60,7 @@ def resolve(entrypoint: str) -> Callable[..., Any]:
 def read(path: str | Path) -> Any:
     """Parse a YAML file, turning syntax errors into a :class:`ValidationError` with the location."""
     try:
-        return yaml.safe_load(Path(path).read_text())
+        return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         mark = getattr(exc, "problem_mark", None)
         where = f"line {mark.line + 1}, column {mark.column + 1}: " if mark else ""
@@ -156,7 +156,7 @@ def expand(paths: list[Path]) -> list[Path]:
 
 def _kind(path: Path) -> str | None:
     try:
-        doc = yaml.safe_load(path.read_text())
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError:
         return "Experiment"  # let load() report the syntax error
     return doc.get("kind") if isinstance(doc, dict) else None

@@ -47,7 +47,7 @@ def raised(coroutine_fn) -> BaseException:
 
 def write_config(tmp_path, faults_yaml: str) -> str:
     path = tmp_path / "proxy.yaml"
-    path.write_text(f"apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults:\n{faults_yaml}")
+    path.write_text(f"apiVersion: agentic-chaos/v1\nkind: McpProxy\nspec:\n  faults:\n{faults_yaml}", encoding="utf-8")
     return str(path)
 
 
@@ -89,7 +89,7 @@ def test_stdio_proxy_with_sdk_client_and_server(mode, tmp_path):
     assert seen["call"].content[0].text.startswith("Quarterly results") and not seen["call"].is_error
     assert "Ignore previous instructions" in seen["resource"]
     assert recorder.elicitations and recorder.samplings
-    report = json.loads(trace.read_text())
+    report = json.loads(trace.read_text(encoding="utf-8"))
     kinds = [e["kind"] for e in report["trace"]["events"]]
     assert "mcp.elicitation.response" in kinds and "mcp.sampling.response" in kinds
 
