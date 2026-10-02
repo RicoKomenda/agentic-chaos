@@ -17,7 +17,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("install the httpx extra: pip install 'agentic-chaos[httpx]'") from exc
 
-from agentic_chaos.faults import ChaosError, ChaosRateLimit, ChaosTimeout
+from agentic_chaos.faults import ChaosAuthError, ChaosError, ChaosRateLimit, ChaosTimeout
 from agentic_chaos.runtime import intercept, record
 
 
@@ -28,6 +28,9 @@ def _before(request: httpx.Request) -> httpx.Response | None:
         intercept("llm.call", host, None)
     except ChaosTimeout as exc:
         raise httpx.ReadTimeout(str(exc), request=request) from exc
+    except ChaosAuthError as exc:
+        headers = {"www-authenticate": exc.www_authenticate()}
+        return httpx.Response(exc.status, headers=headers, json={"error": {"message": str(exc)}}, request=request)
     except ChaosRateLimit as exc:
         headers = {"retry-after": str(exc.retry_after)} if exc.retry_after is not None else {}
         return httpx.Response(429, headers=headers, json={"error": {"message": str(exc)}}, request=request)
