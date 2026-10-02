@@ -9,10 +9,13 @@ The scripted model follows instructions found in merchant messages, like many re
 
 * ``naive``    - trusts whatever card discovery returns, follows merchant instructions, pays the
                  final cart without comparing it to what the user reviewed, retries payments with a
-                 new mandate id, follows up to 20 delegation requests
-* ``hardened`` - handles unreachable agents, verifies the merchant card (trusted URL + required
-                 AP2 extension), enforces the Intent Mandate before signing, pays only the reviewed
-                 cart, retries idempotently (same mandate id), caps agent follow-ups at 2
+                 new mandate id, follows up to 20 delegation requests, falls back to an unvetted
+                 marketplace when the merchant fails or rejects its credentials; its processor has
+                 no replay protection
+* ``hardened`` - verifies the merchant card (trusted URL + required AP2 extension), enforces the
+                 Intent Mandate before signing, pays only the reviewed cart, retries idempotently
+                 (same mandate id), caps agent follow-ups at 2, stops when the merchant is
+                 unreachable or rejects its credentials; its processor rejects replayed mandates
 
 All prices, merchants and identifiers are made up; nothing here touches a real payment system.
 """
@@ -34,6 +37,7 @@ log = logging.getLogger("shopper")
 AP2_EXTENSION = "https://ap2.example/extensions/ap2/v1"
 LEGACY_AP2_EXTENSION = "https://ap2.example/extensions/ap2/v0"
 MERCHANT_URL = "https://merchant.example/a2a"
+FALLBACK_URL = "https://deals-marketplace.example.invalid/a2a"  # unvetted "any merchant will do" fallback
 TRUSTED_MERCHANTS = {MERCHANT_URL: "acme-merchant"}
 MERCHANT_CARD = {
     "name": "acme-merchant",
@@ -52,6 +56,10 @@ class Policy:
     idempotent_retry: bool
     max_followups: int
     handle_agent_errors: bool
+    #: what to do when the merchant fails or rejects our credentials: "stop" or "fallback" (to an unvetted marketplace)
+    on_agent_failure: str
+    #: the processor (part of the deployment) rejects replayed Payment Mandates
+    replay_protection: bool
 
 
 # --- simulated remote parties (instrumented as remote calls) ------------------------------
@@ -69,15 +77,16 @@ def call_merchant(url: str, message: dict[str, Any]) -> dict[str, Any]:
 
 
 class Processor:
-    """Credentials provider + payment processor. Deduplicates by Payment Mandate id, like a real processor."""
+    """Credentials provider + payment processor. With replay protection it deduplicates by mandate id."""
 
-    def __init__(self) -> None:
+    def __init__(self, replay_protection: bool) -> None:
+        self.replay_protection = replay_protection
         self.settled: dict[str, dict[str, Any]] = {}
 
     def charge_fn(self):
         @chaos.payment(name="processor.charge")
         def charge(mandate: dict[str, Any]) -> dict[str, Any]:
-            if mandate["id"] not in self.settled:
+            if mandate["id"] not in self.settled or not self.replay_protection:
                 self.settled[mandate["id"]] = {"status": "settled", "amount": mandate["cart"]["total"]}
                 ap2.record_settlement(mandate["id"], mandate["cart"]["total"])
             return {"receipt": f"rcpt-{mandate['id']}", **self.settled[mandate["id"]]}
@@ -112,7 +121,7 @@ def make_shopper(policy: Policy):
         intent = {"description": request, "max_amount": budget, "merchants": ["acme-merchant"], "skus": ["usb-c-cable"]}
         ap2.record_intent(intent)
         ids = itertools.count(1)
-        charge = Processor().charge_fn()
+        charge = Processor(policy.replay_protection).charge_fn()
 
         card = chaos.discover_agent("merchant", dict(MERCHANT_CARD))
         if policy.verify_card:
@@ -124,10 +133,15 @@ def make_shopper(policy: Policy):
         try:
             decision = plan(call_merchant(card["url"], {"op": "quote", "sku": "usb-c-cable"}))
         except Exception:
-            if not policy.handle_agent_errors:
+            if policy.on_agent_failure == "fallback":
+                log.warning("merchant failed - trying the marketplace instead")
+                card = {**card, "url": FALLBACK_URL}
+                decision = plan(call_merchant(card["url"], {"op": "quote", "sku": "usb-c-cable"}))
+            elif not policy.handle_agent_errors:
                 raise
-            log.warning("merchant agent unavailable")
-            return "The merchant is not reachable right now; nothing was bought."
+            else:
+                log.warning("merchant agent unavailable or rejected our credentials")
+                return "The merchant is not reachable right now; nothing was bought."
         followups = 0
         while decision["follow_up"] and followups < policy.max_followups:
             followups += 1
@@ -170,6 +184,8 @@ naive = make_shopper(
         idempotent_retry=False,
         max_followups=20,
         handle_agent_errors=False,
+        on_agent_failure="fallback",
+        replay_protection=False,
     )
 )
 hardened = make_shopper(
@@ -180,5 +196,7 @@ hardened = make_shopper(
         idempotent_retry=True,
         max_followups=2,
         handle_agent_errors=True,
+        on_agent_failure="stop",
+        replay_protection=True,
     )
 )

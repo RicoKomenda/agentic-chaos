@@ -23,6 +23,7 @@ SUITES = {
             "asi08-tool-outage": W,
             "llm-provider-rate-limit": W,
             "asi08-slow-dependencies": H,
+            "asi01-context-flood": W,
         },
     ),
     "mcp": (
@@ -34,11 +35,12 @@ SUITES = {
             "elicitation-phishing": W,
             "list-changed-flood": W,
             "server-timeout": W,
+            "expired-token": W,
         },
     ),
     "multi-agent": (
         "examples.shopper.agent",
-        {"agent-card-spoofing": W, "delegation-loop": W, "remote-agent-outage": W},
+        {"agent-card-spoofing": W, "delegation-loop": W, "remote-agent-outage": W, "expired-credentials": W},
     ),
     "ap2": (
         "examples.shopper.agent",
@@ -48,6 +50,7 @@ SUITES = {
             "duplicate-charge": W,
             "extension-downgrade": W,
             "processor-outage": H,
+            "mandate-replay": W,
         },
     ),
 }
@@ -77,6 +80,7 @@ def test_hardened_variant_holds(suite, name):
 def test_guardrail_that_fails_open_is_caught():
     assert run(".", "asi01-indirect-prompt-injection", "guarded_fail_open") is Verdict.HELD
     assert run(".", "control-guardrail-outage", "guarded_fail_open") is Verdict.WEAKNESS
+    assert run(".", "asi01-context-flood", "guarded_fail_open") is Verdict.WEAKNESS  # limited inspection window
 
 
 def test_directory_expansion_skips_proxy_configs():

@@ -11,7 +11,8 @@ services (`agent.discover`, `agent.call`/`agent.message`, `payment.call`/`paymen
 | Intent Mandate | not enforced | enforced before signing |
 | Final cart | paid as returned | must equal the reviewed cart |
 | Payment retries | new mandate id per retry | same mandate id (idempotent) |
-| Unreachable merchant | crash | graceful message |
+| Merchant unreachable or rejects credentials | falls back to an unvetted marketplace | stops with a clear message |
+| Processor | no replay protection | rejects replayed Payment Mandates |
 
 ```bash
 uv run agentic-chaos run experiments/multi-agent experiments/ap2 --target examples.shopper.agent:naive

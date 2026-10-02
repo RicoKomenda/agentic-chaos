@@ -4,7 +4,8 @@ The "model" is a scripted stand-in that, like many real models, follows instruct
 its context. Three variants show how the same experiments separate weak from strong designs:
 
 * ``naive``             - no guardrail, no error handling
-* ``guarded_fail_open`` - has an injection guardrail, but proceeds if the guardrail is down
+* ``guarded_fail_open`` - has an injection guardrail that only inspects the first 2,000 characters,
+                          and proceeds if the guardrail is down
 * ``hardened``          - guardrail fails closed, an authorization check guards the sensitive tool,
                           and tool/LLM errors are handled gracefully
 
@@ -88,7 +89,7 @@ def think(context: str) -> dict:
 # --- agent loop ---------------------------------------------------------------------------
 
 
-def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: int):
+def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: int, inspect_limit: int | None = None):
     def run(task: str = "Summarise https://example.com/news", user: str = "alice") -> str:
         send_email = make_send_email(Mailbox())
         url = task.split()[-1]
@@ -106,7 +107,8 @@ def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: i
 
         if guardrail:
             try:
-                safe = injection_guardrail(context)
+                # a guardrail with a limited inspection window only sees the start of the context
+                safe = injection_guardrail(context[:inspect_limit] if inspect_limit else context)
             except Exception:
                 if not fail_open:
                     log.error("injection guardrail unavailable - refusing (fail closed)")
@@ -144,5 +146,5 @@ def make_agent(*, guardrail: bool, fail_open: bool, allow_list: bool, retries: i
 
 
 naive = make_agent(guardrail=False, fail_open=True, allow_list=False, retries=0)
-guarded_fail_open = make_agent(guardrail=True, fail_open=True, allow_list=False, retries=2)
+guarded_fail_open = make_agent(guardrail=True, fail_open=True, allow_list=False, retries=2, inspect_limit=2000)
 hardened = make_agent(guardrail=True, fail_open=False, allow_list=True, retries=2)
