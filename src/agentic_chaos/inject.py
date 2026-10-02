@@ -20,7 +20,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from agentic_chaos.faults import Override, Repeat
-from agentic_chaos.runtime import intercept, record
+from agentic_chaos.runtime import aintercept, intercept, record
 
 __all__ = [
     "agent",
@@ -65,6 +65,21 @@ def _instrument(kind: str, before: str | None, after: str | None) -> Callable[..
                     return repeat.times
             return 0
 
+        async def _abefore(label: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> int:
+            record(kind, label, args=list(args), kwargs=kwargs)
+            if before:
+                try:
+                    await aintercept(before, label, None, args=args, kwargs=kwargs)
+                except Repeat as repeat:
+                    return repeat.times
+            return 0
+
+        async def _aafter(label: str, result: Any) -> Any:
+            if after:
+                result = await aintercept(after, label, result)
+            record(f"{kind}.result", label, result=result)
+            return result
+
         def _duplicate(label: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
             record(kind, label, args=list(args), kwargs=kwargs, duplicate=True)
 
@@ -80,14 +95,14 @@ def _instrument(kind: str, before: str | None, after: str | None) -> Callable[..
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 label = _label(args, kwargs)
                 try:
-                    extra = _before(label, args, kwargs)
+                    extra = await _abefore(label, args, kwargs)
                 except Override as forced:
-                    return _after(label, forced.value)
+                    return await _aafter(label, forced.value)
                 result = await fn(*args, **kwargs)
                 for _ in range(extra):
                     _duplicate(label, args, kwargs)
                     result = await fn(*args, **kwargs)
-                return _after(label, result)
+                return await _aafter(label, result)
 
             return async_wrapper
 

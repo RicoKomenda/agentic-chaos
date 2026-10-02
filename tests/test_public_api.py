@@ -25,6 +25,7 @@ MODULES = [
     "agentic_chaos.mcp.proxy",
     "agentic_chaos.payloads",
     "agentic_chaos.probes",
+    "agentic_chaos.redact",
     "agentic_chaos.runtime",
     "agentic_chaos.schema",
     "agentic_chaos.stats",

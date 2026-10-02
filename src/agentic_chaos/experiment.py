@@ -18,6 +18,7 @@ from typing import Any
 
 from agentic_chaos.faults import Fault
 from agentic_chaos.probes import Probe, ProbeResult
+from agentic_chaos.redact import Redactor, redact
 from agentic_chaos.runtime import Session, Trace, bound
 from agentic_chaos.stats import runs_needed, wilson_interval
 
@@ -141,7 +142,15 @@ class ExperimentResult:
     def chaos_pass_rate(self) -> float | None:
         return self._rate(self.chaos)
 
-    def to_dict(self, include_traces: bool = False) -> dict[str, Any]:
+    def to_dict(self, include_traces: bool = False, *, redactor: Redactor | None | bool = True) -> dict[str, Any]:
+        """A JSON-ready report. Secrets are redacted unless ``redactor=False`` (see :mod:`agentic_chaos.redact`)."""
+        report = self._report(include_traces)
+        if redactor is False:
+            return report
+        redacted: dict[str, Any] = redact(report, None if redactor is True else redactor)
+        return redacted
+
+    def _report(self, include_traces: bool) -> dict[str, Any]:
         exp = self.experiment
         return {
             "name": exp.name,

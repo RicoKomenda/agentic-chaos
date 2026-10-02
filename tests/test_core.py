@@ -155,3 +155,54 @@ def test_auth_error_carries_challenge():
         'Bearer error="insufficient_scope", error_description="additional scope required (injected)", '
         'scope="read", resource_metadata="https://r.example/meta"'
     )
+
+
+def test_latency_does_not_block_the_event_loop_in_async_code():
+    import time
+
+    @chaos.tool(name="slow")
+    async def slow():
+        return "done"
+
+    async def main():
+        ticks = 0
+
+        async def ticker():
+            nonlocal ticks
+            for _ in range(10):
+                await asyncio.sleep(0.01)
+                ticks += 1
+
+        started = time.monotonic()
+        result, _ = await asyncio.gather(slow(), ticker())
+        return result, ticks, time.monotonic() - started
+
+    with bound(Session([faults.Latency("slow", seconds=0.2)])):
+        result, ticks, elapsed = asyncio.run(main())
+    assert result == "done" and elapsed >= 0.2
+    assert ticks == 10  # the loop kept running while the fault delayed the call
+
+
+def test_kill_switch(monkeypatch, tmp_path):
+    from agentic_chaos import runtime
+
+    session = Session([faults.Timeout("lookup")])
+    monkeypatch.setenv(runtime.DISABLE_ENV, "1")
+    with bound(session):
+        assert lookup("a") == "value-for-a"
+    monkeypatch.delenv(runtime.DISABLE_ENV)
+
+    runtime.disable()
+    try:
+        with bound(session):
+            assert lookup("a") == "value-for-a"
+    finally:
+        runtime.enable()
+
+    kill = tmp_path / "stop"
+    monkeypatch.setenv(runtime.KILL_FILE_ENV, str(kill))
+    monkeypatch.setattr(runtime, "_kill_file_cache", (0.0, False))
+    kill.touch()
+    with bound(session):
+        assert lookup("a") == "value-for-a"
+    assert not session.trace.events  # nothing is recorded while switched off

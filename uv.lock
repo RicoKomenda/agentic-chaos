@@ -52,6 +52,7 @@ case-studies = [
 ]
 dev = [
     { name = "httpx" },
+    { name = "httpx2" },
     { name = "jsonschema" },
     { name = "mypy" },
     { name = "pytest" },
@@ -81,6 +82,7 @@ case-studies = [
 ]
 dev = [
     { name = "httpx", specifier = ">=0.27" },
+    { name = "httpx2", specifier = ">=2.13.1" },
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = ">=2.4.0" },
     { name = "pytest", specifier = ">=8" },

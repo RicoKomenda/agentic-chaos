@@ -18,6 +18,17 @@ items, with priorities, is in [research/scenarios.md](research/scenarios.md#prop
 - [ ] Fuzz mode: random fault combinations to explore, then promote findings to fixed experiments
 - [ ] HTML report and trend comparison across runs
 
+## 1.0 readiness
+
+- [x] Interop with official SDKs (MCP Python + TypeScript reference server, A2A, OpenAI, Anthropic) and the DVMA case study
+- [x] Statistics: pass-rate thresholds, confidence intervals, availability/cost/judge probes
+- [x] Contract: `agentic-chaos/v1` format, validation, JSON Schema, public API, strict typing, versioning policy
+- [x] Safety of the tool: redaction, kill switch, proxy limits and binding, non-blocking latency
+- [ ] Platform support: Windows and macOS CI, Python 3.14
+- [ ] Framework adapters, pytest plugin, GitHub Action, JUnit/HTML/OpenTelemetry output
+- [ ] Release engineering: PyPI trusted publishing, signed provenance, docs site
+- [ ] Remaining risk coverage: ASI05, ASI10 (multi-turn), approval/HITL helpers, model fallback, region failover
+
 ## Integrations
 
 - [x] **MCP chaos proxy** (stdio): poisoned descriptions, rug pull, tool shadowing, sampling and elicitation abuse,

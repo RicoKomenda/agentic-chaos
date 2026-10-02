@@ -6,9 +6,11 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
-from agentic_chaos import __version__, faults, loader, probes, schema
+from agentic_chaos import __version__, faults, loader, probes, runtime, schema
 from agentic_chaos.experiment import Verdict
+from agentic_chaos.redact import Redactor, redact
 
 __all__ = [
     "main",
@@ -26,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--runs", type=int, help="override spec.runs")
     run.add_argument("--report", type=Path, help="write a JSON report to this path")
     run.add_argument("--traces", action="store_true", help="include full traces in the JSON report")
+    run.add_argument("--no-redact", action="store_true", help="do not redact secrets in the report (unsafe)")
+    run.add_argument("--redact-pattern", action="append", default=[], help="extra regex to redact (repeatable)")
 
     proxy = sub.add_parser(
         "mcp-proxy",
@@ -38,6 +42,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     proxy.add_argument("--faults", type=Path, required=True, help="kind: McpProxy file with faults and probes")
     proxy.add_argument("--trace", type=Path, help="write the recorded trace and probe results as JSON on exit")
+    proxy.add_argument("--no-redact", action="store_true", help="do not redact secrets in the trace file (unsafe)")
+    proxy.add_argument(
+        "--allow-remote",
+        action="store_true",
+        help="allow --listen on a non-loopback address (the proxy has no authentication of its own)",
+    )
     proxy.add_argument("--upstream", help="Streamable HTTP endpoint of the MCP server (HTTP mode)")
     proxy.add_argument("--listen", default="127.0.0.1:8765", help="address for HTTP mode (default 127.0.0.1:8765)")
     proxy.add_argument("server", nargs=argparse.REMAINDER, help="-- followed by the MCP server command (stdio mode)")
@@ -78,6 +88,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate":
         return _validate(args)
 
+    if not runtime.is_enabled():
+        print(f"chaos is switched off ({runtime.DISABLE_ENV} or {runtime.KILL_FILE_ENV}); not running", file=sys.stderr)
+        return 2
+
     results = []
     for path in loader.expand(args.files):
         try:
@@ -89,13 +103,25 @@ def main(argv: list[str] | None = None) -> int:
         print(result.summary(), end="\n\n")
 
     if args.report:
-        args.report.write_text(json.dumps([r.to_dict(args.traces) for r in results], indent=2))
+        redactor: Redactor | bool = False if args.no_redact else Redactor(extra_patterns=args.redact_pattern)
+        args.report.write_text(json.dumps([r.to_dict(args.traces, redactor=redactor) for r in results], indent=2))
         print(f"report written to {args.report}")
 
     weaknesses = sum(r.verdict is Verdict.WEAKNESS for r in results)
     inconclusive = sum(r.verdict is Verdict.INCONCLUSIVE for r in results)
     print(f"{len(results)} experiment(s): {weaknesses} weakness(es), {inconclusive} inconclusive")
     return 1 if weaknesses else (2 if inconclusive else 0)
+
+
+def _is_loopback(host: str) -> bool:
+    import ipaddress
+
+    if host in ("", "localhost"):
+        return True
+    try:
+        return ipaddress.ip_address(host.strip("[]")).is_loopback
+    except ValueError:
+        return False
 
 
 def _report_invalid(exc: Exception) -> int:
@@ -140,6 +166,11 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
                 from agentic_chaos.mcp.http import McpHttpProxy
 
                 host, _, port = args.listen.rpartition(":")
+                if not _is_loopback(host) and not args.allow_remote:
+                    raise SystemExit(
+                        f"refusing to listen on {host}: the proxy forwards credentials and has no authentication; "
+                        "use --allow-remote if this is intended"
+                    )
                 proxy_http = McpHttpProxy(args.upstream)
                 server = await proxy_http.serve(host or "127.0.0.1", int(port))
                 print(f"[agentic-chaos] MCP chaos proxy listening on {proxy_http.url}", file=sys.stderr)
@@ -158,7 +189,9 @@ def _mcp_proxy(args: argparse.Namespace) -> int:
     for r in results:  # stdout belongs to the MCP protocol; report on stderr
         print(f"[agentic-chaos] {'PASS' if r.passed else 'FAIL'} {r.name} {r.detail}".rstrip(), file=sys.stderr)
     if args.trace:
-        report = {"probes": [r.to_dict() for r in results], "trace": session.trace.to_dict()}
+        report: Any = {"probes": [r.to_dict() for r in results], "trace": session.trace.to_dict()}
+        if not args.no_redact:
+            report = redact(report)
         args.trace.write_text(json.dumps(report, indent=2))
     return 0 if all(r.passed for r in results) else 1
 

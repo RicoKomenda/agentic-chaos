@@ -22,6 +22,7 @@ request to the remote agent more than once.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from collections.abc import AsyncIterator, Callable, Iterator
@@ -262,7 +263,8 @@ def build(http: ModuleType) -> tuple[type, type]:
             self.wrapped = wrapped or http.AsyncHTTPTransport()
 
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-            short_circuit, extra = _before(request)
+            # faults may sleep (latency): run them off the event loop; the context (session) is copied
+            short_circuit, extra = await asyncio.to_thread(_before, request)
             if short_circuit is not None:
                 return short_circuit
             for _ in range(extra):

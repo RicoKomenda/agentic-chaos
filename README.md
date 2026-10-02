@@ -209,7 +209,7 @@ can be tested together. See [docs/statistics.md](docs/statistics.md).
 - [Protocol layers: MCP, multi-agent / A2A, AP2](docs/protocols.md)
 - [Interoperability with official SDKs, and findings](docs/interop.md)
 - [Case study: Damn Vulnerable Memory Agent](docs/case-studies/dvma.md)
-- [Running chaos safely](docs/safety.md)
+- [Running chaos safely](docs/safety.md): kill switch, secret redaction, proxy limits
 - [Landscape and related work](docs/landscape.md)
 - [Research notes: security chaos scenarios across the AI stack](docs/research/scenarios.md)
 - [Public API](docs/api.md) and [versioning policy](docs/versioning.md)

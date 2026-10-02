@@ -11,8 +11,11 @@ requires; the client's answers arrive as separate ``POST`` requests and are reco
 ``auth_error`` faults become real ``401``/``403`` responses with a ``WWW-Authenticate`` header, so the
 client's OAuth handling (token refresh, step-up scopes, re-consent) is exercised.
 
-``GET`` (server listen streams) and ``DELETE`` (session end) are passed through. Request bodies sent with
-chunked transfer encoding are not supported.
+``GET`` (server listen streams) and ``DELETE`` (session end) are passed through.
+
+The proxy has no authentication of its own and forwards the client's credentials upstream, so bind it to
+loopback (the default). Requests are bounded: body size (413), header size and count (431), and time to
+send the request (408). Chunked request bodies are supported.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -32,6 +36,7 @@ from agentic_chaos import _sse as sse
 from agentic_chaos.mcp.core import McpChaosCore
 
 __all__ = [
+    "Limits",
     "McpHttpProxy",
 ]
 
@@ -39,14 +44,46 @@ log = logging.getLogger("agentic_chaos.mcp.http")
 
 _HOP_BY_HOP = {"host", "content-length", "connection", "transfer-encoding", "keep-alive", "accept-encoding"}
 _RESPONSE_HEADERS = {"content-type", "mcp-session-id", "mcp-protocol-version", "www-authenticate", "retry-after"}
-_REASONS = {200: "OK", 202: "Accepted", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 502: "Bad Gateway"}
+_REASONS = {
+    200: "OK",
+    202: "Accepted",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    408: "Request Timeout",
+    413: "Content Too Large",
+    431: "Request Header Fields Too Large",
+    502: "Bad Gateway",
+}
+
+
+class _HttpError(Exception):
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+@dataclass(frozen=True)
+class Limits:
+    """Bounds for incoming requests."""
+
+    max_body: int = 10 * 1024 * 1024
+    max_line: int = 16 * 1024
+    max_headers: int = 100
+    read_timeout: float = 30.0
 
 
 class McpHttpProxy:
     def __init__(
-        self, upstream: str, *, transport: httpx.AsyncBaseTransport | None = None, timeout: float = 120.0
+        self,
+        upstream: str,
+        *,
+        transport: httpx.AsyncBaseTransport | None = None,
+        timeout: float = 120.0,
+        limits: Limits | None = None,
     ) -> None:
         self.upstream = upstream
+        self.limits = limits or Limits()
         self.core = McpChaosCore()
         self.client = httpx.AsyncClient(transport=transport, timeout=timeout)
         parts = urlsplit(upstream)
@@ -77,9 +114,16 @@ class McpHttpProxy:
 
     async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
-            request = await _read_request(reader)
+            try:
+                request = await asyncio.wait_for(_read_request(reader, self.limits), self.limits.read_timeout)
+            except asyncio.TimeoutError:
+                raise _HttpError(408, "request not received in time") from None
             if request is not None:
                 await self._dispatch(*request, writer)
+        except _HttpError as exc:
+            await _send(
+                writer, exc.status, {"content-type": "application/json"}, json.dumps({"error": str(exc)}).encode()
+            )
         except Exception as exc:  # never let one broken exchange take the proxy down
             log.exception("proxy error")
             await _send(writer, 502, {"content-type": "application/json"}, json.dumps({"error": str(exc)}).encode())
@@ -178,18 +222,59 @@ async def _transform_event(event: sse.Event, transform: Any) -> bytes:
 # --- minimal HTTP/1.1 plumbing (one exchange per connection) ---------------------------------
 
 
-async def _read_request(reader: asyncio.StreamReader) -> tuple[str, dict[str, str], bytes] | None:
-    request_line = await reader.readline()
+async def _readline(reader: asyncio.StreamReader, limits: Limits) -> bytes:
+    try:
+        line = await reader.readuntil(b"\n")
+    except asyncio.IncompleteReadError as exc:
+        return exc.partial
+    except asyncio.LimitOverrunError:
+        raise _HttpError(431, "header line too long") from None
+    if len(line) > limits.max_line:
+        raise _HttpError(431, "header line too long")
+    return line
+
+
+async def _read_request(reader: asyncio.StreamReader, limits: Limits) -> tuple[str, dict[str, str], bytes] | None:
+    request_line = await _readline(reader, limits)
     if not request_line.strip():
         return None
     method = request_line.decode("latin-1").split(" ", 1)[0].upper()
     headers: dict[str, str] = {}
-    while (line := await reader.readline()) not in (b"\r\n", b"\n", b""):
+    while (line := await _readline(reader, limits)) not in (b"\r\n", b"\n", b""):
+        if len(headers) >= limits.max_headers:
+            raise _HttpError(431, "too many header fields")
         key, _, value = line.decode("latin-1").partition(":")
         headers[key.strip().lower()] = value.strip()
-    length = int(headers.get("content-length", "0") or 0)
+    if "chunked" in headers.get("transfer-encoding", "").lower():
+        return method, headers, await _read_chunked(reader, limits)
+    try:
+        length = int(headers.get("content-length", "0") or 0)
+    except ValueError:
+        raise _HttpError(400, "invalid content-length") from None
+    if length < 0:
+        raise _HttpError(400, "invalid content-length")
+    if length > limits.max_body:
+        raise _HttpError(413, f"body larger than {limits.max_body} bytes")
     body = await reader.readexactly(length) if length else b""
     return method, headers, body
+
+
+async def _read_chunked(reader: asyncio.StreamReader, limits: Limits) -> bytes:
+    body = bytearray()
+    while True:
+        size_line = (await _readline(reader, limits)).split(b";", 1)[0].strip()
+        try:
+            size = int(size_line, 16)
+        except ValueError:
+            raise _HttpError(400, "invalid chunk size") from None
+        if size == 0:
+            while (await _readline(reader, limits)) not in (b"\r\n", b"\n", b""):
+                pass  # trailers
+            return bytes(body)
+        if len(body) + size > limits.max_body:
+            raise _HttpError(413, f"body larger than {limits.max_body} bytes")
+        body += await reader.readexactly(size)
+        await _readline(reader, limits)  # CRLF after the chunk
 
 
 async def _head(writer: asyncio.StreamWriter, status: int, headers: dict[str, str]) -> None:

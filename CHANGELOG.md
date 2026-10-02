@@ -24,6 +24,10 @@ and the project uses [Semantic Versioning](https://semver.org/) (see [docs/versi
 - Demo targets (`mailbot`, `mcp_demo`, `shopper`), a catalog of 28 experiments and 2 MCP proxy configurations, an interop suite against the
   official MCP, A2A, OpenAI and Anthropic SDKs, and the DVMA case study.
 - Public API defined by `__all__`, `py.typed`, strict type checking.
+- Safety: reports and proxy traces are redacted by default (`--no-redact`, `--redact-pattern`); kill switch
+  (`AGENTIC_CHAOS_DISABLED`, `AGENTIC_CHAOS_KILL_FILE`, `runtime.disable()`); HTTP proxy request limits,
+  chunked request bodies and loopback-only binding (`--allow-remote`); latency faults no longer block the
+  event loop in async code (`runtime.aintercept`).
 
 ### Deprecated
 

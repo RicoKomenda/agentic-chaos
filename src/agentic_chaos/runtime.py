@@ -8,10 +8,12 @@ code can ship to production unchanged.
 
 from __future__ import annotations
 
+import asyncio
 import contextvars
 import copy
 import fnmatch
 import logging
+import os
 import random
 import time
 from collections import Counter
@@ -20,14 +22,20 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 __all__ = [
+    "DISABLE_ENV",
+    "KILL_FILE_ENV",
     "Event",
     "InjectionContext",
     "POINTS",
     "Session",
     "Trace",
+    "aintercept",
     "bound",
     "current",
+    "disable",
+    "enable",
     "intercept",
+    "is_enabled",
     "iter_strings",
     "record",
     "suspended",
@@ -110,7 +118,9 @@ class Session:
         self._fired: Counter[int] = Counter()
         self._history: dict[tuple[str, str], list[Any]] = {}
 
-    def intercept(self, point: str, name: str, value: Any, **context: Any) -> Any:
+    def intercept(
+        self, point: str, name: str, value: Any, *, _delays: list[float] | None = None, **context: Any
+    ) -> Any:
         history = self._history.setdefault((point, name), [])
         previous = list(history)
         if value is not None:
@@ -127,7 +137,7 @@ class Session:
                 continue
             self._fired[index] += 1
             self.trace.record("fault", fault.kind, point=point, target=name, params=fault.params())
-            value = fault.apply(value, InjectionContext(point, name, self, context, previous))
+            value = fault.apply(value, InjectionContext(point, name, self, context, previous, _delays))
         return value
 
 
@@ -139,6 +149,15 @@ class InjectionContext:
     extra: dict[str, Any]
     #: Earlier (unfaulted) values seen at this point and target, oldest first - used by replay faults.
     previous: list[Any] = field(default_factory=list)
+    #: Set inside async code: delays are collected here and awaited instead of slept (see :func:`aintercept`).
+    deferred_delays: list[float] | None = None
+
+    def sleep(self, seconds: float) -> None:
+        """Delay the instrumented call without blocking an event loop when called from async code."""
+        if self.deferred_delays is not None:
+            self.deferred_delays.append(seconds)
+        else:
+            time.sleep(seconds)
 
     @property
     def rng(self) -> random.Random:
@@ -151,8 +170,48 @@ class InjectionContext:
 _current: contextvars.ContextVar[Session | None] = contextvars.ContextVar("agentic_chaos_session", default=None)
 
 
+#: Kill switch: set this environment variable to 1/true/yes to make all instrumentation inert.
+DISABLE_ENV = "AGENTIC_CHAOS_DISABLED"
+#: Kill switch for running processes: if this environment variable names a file and the file exists,
+#: all instrumentation is inert (checked at most once per second).
+KILL_FILE_ENV = "AGENTIC_CHAOS_KILL_FILE"
+_disabled_by_code = False
+_kill_file_cache: tuple[float, bool] = (0.0, False)
+
+
+def disable() -> None:
+    """Make all instrumentation inert in this process (programmatic kill switch)."""
+    global _disabled_by_code
+    _disabled_by_code = True
+
+
+def enable() -> None:
+    global _disabled_by_code
+    _disabled_by_code = False
+
+
+def is_enabled() -> bool:
+    """False if chaos is switched off by :func:`disable`, ``AGENTIC_CHAOS_DISABLED`` or the kill file."""
+    global _kill_file_cache
+    if _disabled_by_code or os.environ.get(DISABLE_ENV, "").strip().lower() in ("1", "true", "yes", "on"):
+        return False
+    kill_file = os.environ.get(KILL_FILE_ENV)
+    if not kill_file:
+        return True
+    checked_at, killed = _kill_file_cache
+    now = time.monotonic()
+    if now - checked_at > 1.0:
+        killed = os.path.exists(kill_file)
+        _kill_file_cache = (now, killed)
+    return not killed
+
+
 def current() -> Session | None:
-    return _current.get()
+    """The active session, or None outside experiments and while the kill switch is on."""
+    session = _current.get()
+    if session is None or not is_enabled():
+        return None
+    return session
 
 
 class suspended:
@@ -167,14 +226,28 @@ class suspended:
 
 def intercept(point: str, name: str, value: Any = None, **context: Any) -> Any:
     """Pass ``value`` through any active faults for ``point``/``name``. No-op outside a session."""
-    session = _current.get()
+    session = current()
     if session is None:
         return value
     return session.intercept(point, name, value, **context)
 
 
+async def aintercept(point: str, name: str, value: Any = None, **context: Any) -> Any:
+    """Like :func:`intercept`, for async code: latency faults are awaited instead of blocking the loop."""
+    session = current()
+    if session is None:
+        return value
+    delays: list[float] = []
+    try:
+        value = session.intercept(point, name, value, _delays=delays, **context)
+    finally:
+        if delays:
+            await asyncio.sleep(sum(delays))
+    return value
+
+
 def record(kind: str, name: str, **data: Any) -> None:
-    session = _current.get()
+    session = current()
     if session is not None:
         session.trace.record(kind, name, **data)
 

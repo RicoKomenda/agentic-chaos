@@ -127,6 +127,7 @@
     "McpChaosCore"
   ],
   "agentic_chaos.mcp.http": [
+    "Limits",
     "McpHttpProxy"
   ],
   "agentic_chaos.mcp.proxy": [
@@ -171,15 +172,28 @@
     "tool_called",
     "tool_not_called"
   ],
+  "agentic_chaos.redact": [
+    "DEFAULT_KEY_PATTERN",
+    "DEFAULT_PATTERNS",
+    "REDACTED",
+    "Redactor",
+    "redact"
+  ],
   "agentic_chaos.runtime": [
+    "DISABLE_ENV",
     "Event",
     "InjectionContext",
+    "KILL_FILE_ENV",
     "POINTS",
     "Session",
     "Trace",
+    "aintercept",
     "bound",
     "current",
+    "disable",
+    "enable",
     "intercept",
+    "is_enabled",
     "iter_strings",
     "record",
     "suspended"

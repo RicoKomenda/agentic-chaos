@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import copy
 import fnmatch
-import time
 from typing import Any, ClassVar
 
 from agentic_chaos import payloads
@@ -174,7 +173,7 @@ class Latency(Fault):
         self.jitter = jitter
 
     def apply(self, value: Any, ctx: InjectionContext) -> Any:
-        time.sleep(max(0.0, self.seconds + ctx.rng.uniform(-self.jitter, self.jitter)))
+        ctx.sleep(max(0.0, self.seconds + ctx.rng.uniform(-self.jitter, self.jitter)))
         return value
 
 

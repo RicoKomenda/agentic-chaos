@@ -22,6 +22,7 @@ cut-off answer. With ``mode="raw"`` faults act on the undecoded body, to break t
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator, Callable, Iterator
 from types import ModuleType
@@ -176,7 +177,8 @@ def build(http: ModuleType) -> tuple[type, type]:
             self.mode = mode
 
         async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-            short_circuit, extra = _before(request)
+            # faults may sleep (latency): run them off the event loop; the context (session) is copied
+            short_circuit, extra = await asyncio.to_thread(_before, request)
             if short_circuit is not None:
                 return short_circuit
             for _ in range(extra):
